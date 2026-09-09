@@ -1,11 +1,180 @@
-/* 映像を主役にするため背景は黒固定。OS のライトモードに追従させない。 */
 :root {
+  /* 映像を主役にするため背景は黒固定。OS のライトモードに追従させない。 */
   color-scheme: dark;
   font-family: system-ui, sans-serif;
+  font-size: 14px;
+
+  --toolbar-h: 44px;
+  --gap: 2px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
   background: #000;
   color: #fff;
+  /* グリッドは常に画面内に収まる。スクロールバーが出ると 100vw の計算が狂う。 */
+  overflow: hidden;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  /* dvh は iOS Safari のツールバー出入りで高さが変わる問題を吸収する */
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* ---- ツールバー ---- */
+
+.toolbar {
+  flex: 0 0 var(--toolbar-h);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  background: #111;
+}
+
+.toolbar button {
+  min-width: 44px;
+  /* 指で押せる高さを確保する（iPad 前提） */
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1c1c1c;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.toolbar button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.toolbar button[aria-pressed='true'] {
+  border-color: #fff;
+  background: #fff;
+  color: #000;
+}
+
+.layouts {
+  display: flex;
+  gap: 4px;
+}
+
+.count {
+  /* 左のボタン群と右のボタン群を引き離す */
+  margin-right: auto;
+  color: #888;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- URL 追加パネル ---- */
+
+.panel {
+  /* グリッドにかぶせる。レイアウトを押し出すと再生中の iframe がリサイズされる。 */
+  position: fixed;
+  top: var(--toolbar-h);
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding: 8px;
+  background: #111;
+  border-bottom: 1px solid #333;
+}
+
+.panel textarea {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  font: inherit;
+  resize: vertical;
+}
+
+.panel__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.panel__actions button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1c1c1c;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.panel__actions button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.note {
+  margin: 8px 0 0;
+  color: #888;
+}
+
+.note--error {
+  color: #ff8a8a;
+  overflow-wrap: anywhere;
+}
+
+/* ---- グリッド ---- */
+
+.grid {
+  flex: 1 1 auto;
+  /* flex の子は既定で内容より縮まない。これが無いとグリッドが画面外へはみ出す。 */
+  min-height: 0;
+
+  --avail-w: calc(100vw - (var(--cols) - 1) * var(--gap));
+  --avail-h: calc(100dvh - var(--toolbar-h) - (var(--rows) - 1) * var(--gap));
+
+  /* セルを 16:9 に保ったまま画面に収める。幅で決まるサイズと高さで決まるサイズの
+     小さい方を採る。引き伸ばさないので、6 分割では上下に黒帯が出る。 */
+  --cell-w: min(
+    calc(var(--avail-w) / var(--cols)),
+    calc(var(--avail-h) / var(--rows) * 16 / 9)
+  );
+
+  display: grid;
+  gap: var(--gap);
+  grid-template-columns: repeat(var(--cols), var(--cell-w));
+  grid-template-rows: repeat(var(--rows), calc(var(--cell-w) / 16 * 9));
+  justify-content: center;
+  align-content: center;
+}
+
+.cell {
+  display: flex;
+  overflow: hidden;
+  background: #0a0a0a;
+}
+
+/* hidden 属性は display 指定に負けるので明示的に打ち消す */
+.cell[hidden] {
+  display: none;
+}
+
+.cell--empty {
+  border: 1px dashed #222;
+}
+
+.cell iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
 }
