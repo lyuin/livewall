@@ -1,0 +1,11 @@
+/* 映像を主役にするため背景は黒固定。OS のライトモードに追従させない。 */
+:root {
+  color-scheme: dark;
+  font-family: system-ui, sans-serif;
+}
+
+body {
+  margin: 0;
+  background: #000;
+  color: #fff;
+}
