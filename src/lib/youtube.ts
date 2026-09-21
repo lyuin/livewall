@@ -1,5 +1,11 @@
 // YouTube の動画 ID は 11 文字。URL 中の他のパス断片と区別する手がかりがこれしかない。
+export const VIDEO_ID_LENGTH = 11
+
 const VIDEO_ID = /^[A-Za-z0-9_-]{11}$/
+
+export function isVideoId(value: string): boolean {
+  return VIDEO_ID.test(value)
+}
 
 // ID がパスの 2 番目に来るホスト側の形式。/live/ はライブ配信の共有リンクで実際に使われる。
 const ID_IN_PATH = ['live', 'embed', 'shorts', 'v']
