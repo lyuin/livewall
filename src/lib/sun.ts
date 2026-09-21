@@ -75,16 +75,27 @@ export function sameDate(a: CalendarDate, b: CalendarDate): boolean {
 }
 
 /**
- * 年から書く。月日が先に来る形式は国によって順序が逆になり同じ文字列が別の日を指すが、
- * 年が先なら誤読の余地がない。
+ * ISO 8601 の書き方。月日が先に来る形式は国によって順序が逆になり
+ * 同じ文字列が別の日を指すが、年が先なら誤読の余地がない。
  */
 export function formatDate({ year, month, day }: CalendarDate): string {
-  return `${year}/${pad(month)}/${pad(day)}`
+  return `${year}-${pad(month)}-${pad(day)}`
 }
 
-/** 基準の日付が別に出ているときは、年を省いても読める。 */
-export function formatShortDate({ month, day }: CalendarDate): string {
-  return `${pad(month)}/${pad(day)}`
+/** 暦日の差を日数で返す。符号付き。 */
+export function dayDifference(target: CalendarDate, base: CalendarDate): number {
+  const toDays = (date: CalendarDate) =>
+    Date.UTC(date.year, date.month - 1, date.day) / MS_PER_DAY
+  return Math.round(toDays(target) - toDays(base))
+}
+
+/**
+ * 日付のずれ。単位を付けるのは、時計の文脈で -1 だけだと
+ * UTC からの時差（UTC-1 など）に読めてしまうため。
+ * マイナスは U+2212 を使い、ハイフンとの見た目の差をなくす。
+ */
+export function formatDayOffset(difference: number): string {
+  return `${difference > 0 ? '+' : '\u2212'}${Math.abs(difference)}d`
 }
 
 function pad(value: number): string {

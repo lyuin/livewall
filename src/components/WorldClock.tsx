@@ -2,13 +2,13 @@ import { useEffect, useState } from 'react'
 import { CITIES, type City } from '../lib/cities'
 import {
   cityTime,
+  dayDifference,
   formatClock,
   formatDate,
+  formatDayOffset,
   formatDuration,
-  formatShortDate,
   localDate,
   nextSunEvent,
-  sameDate,
   type CalendarDate,
   type CityTime,
 } from '../lib/sun'
@@ -25,13 +25,20 @@ const TWILIGHT_HOURS = 0.8
 
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
 
+// hourCycle: 'h23' を指定するのは、hour12: false だと 0 時を 24 と返す実装があるため
+const LOCAL_TIME_FORMAT = new Intl.DateTimeFormat('en-GB', {
+  hour: '2-digit',
+  minute: '2-digit',
+  hourCycle: 'h23',
+})
+
 type Props = {
-  /** 配信名を再表示する。映像をタップするとプレイヤーが反応するため、
+  /** ツールバーと配信名の表示を切り替える。映像をタップするとプレイヤーが反応するため、
       iframe の外にあるこの帯が受け皿になる。 */
-  onReveal: () => void
+  onToggle: () => void
 }
 
-export default function WorldClock({ onReveal }: Props) {
+export default function WorldClock({ onToggle }: Props) {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -43,12 +50,18 @@ export default function WorldClock({ onReveal }: Props) {
   const next = nextSunEvent(CITIES, now)
 
   return (
-    <button type="button" className="world" onClick={onReveal} aria-label="Show stream names">
+    <button
+      type="button"
+      className="world"
+      onClick={onToggle}
+      aria-label="Toggle stream names and controls"
+    >
       <div className="edge">
-        {/* 端末の日付であることを明示する。都市ごとの日付ずれはこれを基準に測る。 */}
-        <div className="edge__label">Local</div>
+        {/* 端末の日時であることを明示する。都市ごとの日付ずれはこれを基準に測る。
+            中央に東京があるので時刻は重複するが、基準が一目で分かる方を採る。 */}
+        <div className="edge__label">Local time</div>
         <div className="edge__value">
-          {formatDate(today)} {WEEKDAY_FORMAT.format(now)}
+          {formatDate(today)} {WEEKDAY_FORMAT.format(now)} · {LOCAL_TIME_FORMAT.format(now)}
         </div>
       </div>
 
@@ -88,22 +101,23 @@ function CityClock({ city, now, today }: CityProps) {
   const time = cityTime(city.latitude, city.longitude, city.timeZone, now)
   const clock = formatClock(time.hours)
 
-  // 日付が違う都市にだけ日付を添える。曜日の略称（SUN など）は、このアプリが
-  // 日の出・日の入りを扱うため「日曜」か「太陽」か読み分けられないので使わない。
-  const shifted = !sameDate(time.date, today)
+  // 日付が違う都市にだけずれを添える。実際の日付を出すと都市名と合わせて長くなりすぎる。
+  // 曜日の略称（SUN など）は、このアプリが日の出・日の入りを扱うため
+  // 「日曜」か「太陽」か読み分けられないので使わない。
+  const offset = dayDifference(time.date, today)
 
   return (
     <div className={`city ${time.isDay ? 'city--day' : 'city--night'}`}>
       <div className="city__name">
         {city.label}
-        {shifted && <span className="city__date">· {formatShortDate(time.date)}</span>}
+        {offset !== 0 && <span className="city__offset">{formatDayOffset(offset)}</span>}
       </div>
 
       {/* 昼夜を色だけに担わせないよう、読み上げ用の文にも入れる */}
       <div
         className="city__time"
         aria-label={`${city.name} ${clock} ${time.isDay ? 'day' : 'night'}${
-          shifted ? ` on ${formatDate(time.date)}` : ''
+          offset === 0 ? '' : ` on ${formatDate(time.date)}`
         }`}
       >
         {clock}

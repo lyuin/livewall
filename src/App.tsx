@@ -65,6 +65,16 @@ export default function App() {
     setRevealedAt(Date.now())
   }
 
+  // 時計の帯は押すたびに出したり消したりする。出すだけだと、消したいときに
+  // タイマーが切れるまで待つしかなく直感に反する。
+  function toggleChrome() {
+    if (chromeVisible) {
+      setChromeVisible(false)
+      return
+    }
+    revealChrome()
+  }
+
   // 中身が変わったときは、今それが何なのかを知りたい場面なので配信名を出し直す。
   // 変更を起こしたイベント側でやる。effect で videoIds を監視して出し直すと
   // 描画のたびに state を書き換える形になり、余分な再描画を招く。
@@ -137,7 +147,7 @@ export default function App() {
         </div>
       )}
 
-      <WorldClock onReveal={revealChrome} />
+      <WorldClock onToggle={toggleChrome} />
       <Grid
         videoIds={videoIds}
         layout={layout}

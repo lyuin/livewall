@@ -392,7 +392,7 @@ textarea {
 }
 
 /* 端末と日付が違う都市にだけ添える。都市名より弱くして、付加情報だと分かるようにする。 */
-.city__date {
+.city__offset {
   margin-left: 5px;
   letter-spacing: 0.06em;
   font-variant-numeric: tabular-nums;

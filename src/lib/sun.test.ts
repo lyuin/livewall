@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { CITIES } from './cities'
 import {
   cityTime,
+  dayDifference,
   formatClock,
   formatDate,
+  formatDayOffset,
   formatDuration,
-  formatShortDate,
   nextSunEvent,
   sameDate,
 } from './sun'
@@ -167,20 +168,18 @@ describe('現地の暦日', () => {
     const mine = formatDate(
       cityTime(target.latitude, target.longitude, target.timeZone, at).date,
     )
+    // en-CA は ISO と同じ 2026-09-21 の形で返す
     const reference = new Intl.DateTimeFormat('en-CA', {
       timeZone: target.timeZone,
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
-    })
-      .format(at)
-      // en-CA は 2026-09-21 を返すので区切りだけ合わせる
-      .replace(/-/g, '/')
+    }).format(at)
 
     expect(mine).toBe(reference)
   })
 
-  it('東京が翌日でもロサンゼルスは前日として扱われる', () => {
+  it('東京が当日でもロサンゼルスは前日として扱われる', () => {
     const at = new Date('2026-09-21T04:38:00Z')
     const tokyo = city('TOKYO')
     const la = city('LOS ANGELES')
@@ -189,19 +188,15 @@ describe('現地の暦日', () => {
     const laDate = cityTime(la.latitude, la.longitude, la.timeZone, at).date
 
     expect(sameDate(tokyoDate, laDate)).toBe(false)
-    expect(formatShortDate(tokyoDate)).toBe('09/21')
-    expect(formatShortDate(laDate)).toBe('09/20')
+    expect(dayDifference(laDate, tokyoDate)).toBe(-1)
+    expect(formatDayOffset(dayDifference(laDate, tokyoDate))).toBe('\u22121d')
   })
 })
 
 describe('日付の表記', () => {
-  it('年から書き、月日は 0 詰めする', () => {
-    expect(formatDate({ year: 2026, month: 9, day: 1 })).toBe('2026/09/01')
-    expect(formatDate({ year: 2026, month: 12, day: 24 })).toBe('2026/12/24')
-  })
-
-  it('短い形は年を省く', () => {
-    expect(formatShortDate({ year: 2026, month: 9, day: 1 })).toBe('09/01')
+  it('ISO 8601 の形で書き、月日は 0 詰めする', () => {
+    expect(formatDate({ year: 2026, month: 9, day: 1 })).toBe('2026-09-01')
+    expect(formatDate({ year: 2026, month: 12, day: 24 })).toBe('2026-12-24')
   })
 
   it('同じ日かどうかを年月日で比べる', () => {
@@ -209,5 +204,26 @@ describe('日付の表記', () => {
     expect(sameDate({ year: 2026, month: 9, day: 21 }, { year: 2027, month: 9, day: 21 })).toBe(
       false,
     )
+  })
+})
+
+describe('日付のずれ', () => {
+  it('月や年をまたいでも日数で数える', () => {
+    const base = { year: 2026, month: 9, day: 21 }
+    expect(dayDifference({ year: 2026, month: 9, day: 20 }, base)).toBe(-1)
+    expect(dayDifference({ year: 2026, month: 9, day: 22 }, base)).toBe(1)
+    expect(dayDifference(base, base)).toBe(0)
+    // 月末をまたぐ
+    expect(dayDifference({ year: 2026, month: 9, day: 1 }, { year: 2026, month: 8, day: 31 })).toBe(1)
+    // 年末をまたぐ
+    expect(dayDifference({ year: 2027, month: 1, day: 1 }, { year: 2026, month: 12, day: 31 })).toBe(
+      1,
+    )
+  })
+
+  it('単位を付ける。時計の文脈で -1 だけだと UTC の時差に読めるため', () => {
+    // マイナスは U+2212
+    expect(formatDayOffset(-1)).toBe('\u22121d')
+    expect(formatDayOffset(1)).toBe('+1d')
   })
 })
