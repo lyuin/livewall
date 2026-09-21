@@ -144,7 +144,7 @@ body {
   --avail-h: calc(100dvh - var(--toolbar-h) - (var(--rows) - 1) * var(--gap));
 
   /* セルを 16:9 に保ったまま画面に収める。幅で決まるサイズと高さで決まるサイズの
-     小さい方を採る。引き伸ばさないので、6 分割では上下に黒帯が出る。 */
+     小さい方を採る。引き伸ばさないので、4:3 の iPad ではグリッド全体の上下に黒帯が出る。 */
   --cell-w: min(
     calc(var(--avail-w) / var(--cols)),
     calc(var(--avail-h) / var(--rows) * 16 / 9)

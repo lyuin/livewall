@@ -43,6 +43,7 @@ export function save(state: SavedState): void {
   }
 }
 
+// 廃止した分割数（6 など）が保存されていた場合もここで弾かれ、既定値に落ちる
 function isLayout(value: unknown): value is Layout {
   return LAYOUTS.some((layout) => layout === value)
 }
