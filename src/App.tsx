@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import Grid from './components/Grid'
 import Toolbar from './components/Toolbar'
+import WorldClock from './components/WorldClock'
 import { MAX_PLAYERS, type Layout } from './lib/layout'
 import { decodeShareHash, type SharedSet } from './lib/share'
 import { load, save, type ActiveSet } from './lib/storage'
@@ -102,6 +103,7 @@ export default function App() {
         </div>
       )}
 
+      <WorldClock />
       <Grid videoIds={videoIds} layout={layout} showNumbers={editing} />
     </>
   )

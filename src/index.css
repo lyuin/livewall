@@ -5,6 +5,7 @@
   font-size: 14px;
 
   --toolbar-h: 44px;
+  --info-h: 56px;
   --gap: 2px;
 }
 
@@ -232,6 +233,72 @@ body {
   overflow-wrap: anywhere;
 }
 
+/* ---- 世界時計 ---- */
+
+.world {
+  flex: 0 0 var(--info-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 26px;
+  padding: 0 16px;
+  /* 都市が入りきらないときは端を切る。横スクロールバーを出したくない。 */
+  overflow: hidden;
+}
+
+.city {
+  flex: 0 1 auto;
+  min-width: 78px;
+  text-align: center;
+}
+
+.city__name {
+  font-size: 10px;
+  font-weight: 500;
+  /* 字間を空けて、時刻より一段後ろに引く */
+  letter-spacing: 0.16em;
+  white-space: nowrap;
+  color: #5f6570;
+}
+
+.city__time {
+  margin-top: 2px;
+  font-size: 21px;
+  font-weight: 200;
+  line-height: 1.05;
+  /* 桁が動かないよう等幅の数字を使う */
+  font-variant-numeric: tabular-nums;
+  /* 昼夜が切り替わる瞬間を滑らかに見せる */
+  transition: color 600ms ease;
+}
+
+.city--day .city__time {
+  color: #f4f4f5;
+}
+
+.city--night .city__time {
+  color: #7d92b5;
+}
+
+.city__arc {
+  position: relative;
+  height: 3px;
+  margin-top: 6px;
+  border-radius: 2px;
+}
+
+.city__now {
+  position: absolute;
+  top: -2px;
+  width: 2px;
+  height: 7px;
+  /* 線の中心を現在位置に合わせる */
+  margin-left: -1px;
+  border-radius: 1px;
+  background: #fff;
+  box-shadow: 0 0 5px rgba(255, 255, 255, 0.75);
+}
+
 /* ---- グリッド ---- */
 
 .grid {
@@ -240,7 +307,9 @@ body {
   min-height: 0;
 
   --avail-w: calc(100vw - (var(--cols) - 1) * var(--gap));
-  --avail-h: calc(100dvh - var(--toolbar-h) - (var(--rows) - 1) * var(--gap));
+  --avail-h: calc(
+    100dvh - var(--toolbar-h) - var(--info-h) - (var(--rows) - 1) * var(--gap)
+  );
 
   /* セルを 16:9 に保ったまま画面に収める。幅で決まるサイズと高さで決まるサイズの
      小さい方を採る。引き伸ばさないので、4:3 の iPad ではグリッド全体の上下に黒帯が出る。 */
