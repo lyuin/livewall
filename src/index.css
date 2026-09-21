@@ -7,6 +7,18 @@
   --toolbar-h: 44px;
   --info-h: 56px;
   --gap: 2px;
+
+  /* 色はここだけで定義する。各所に直接書くと統一が崩れる。 */
+  --surface: #16181d;
+  --surface-raised: #23262d;
+  /* セグメント式の切り替えの土台。面より暗くして凹んで見せる。 */
+  --track: #0e1013;
+  --line: #2a2e36;
+  --text: #e9eaed;
+  --text-dim: #6a7280;
+  /* 昼の帯と同じ色。画面内の色数を増やさない。 */
+  --accent: #9dc3e6;
+  --danger: #ff9b9b;
 }
 
 * {
@@ -16,7 +28,7 @@
 body {
   margin: 0;
   background: #000;
-  color: #fff;
+  color: var(--text);
   /* グリッドは常に画面内に収まる。スクロールバーが出ると 100vw の計算が狂う。 */
   overflow: hidden;
 }
@@ -29,6 +41,72 @@ body {
   height: 100dvh;
 }
 
+/* ---- ボタンの共通の見た目 ----
+   枠線で区切らず、面の明るさの差で表す。色数と線を減らすほど映像が前に出る。 */
+
+button {
+  min-height: 34px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition:
+    background 160ms ease,
+    color 160ms ease,
+    opacity 160ms ease;
+}
+
+button:hover:not(:disabled) {
+  background: var(--surface-raised);
+}
+
+button:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+/* 枠線を外したので、既定の focus 表示が見えなくなる。明示して補う。 */
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* 破壊的な操作は普段は沈めておき、触れたときだけ危険色にする */
+button.danger {
+  background: transparent;
+  color: var(--text-dim);
+}
+
+button.danger:hover:not(:disabled) {
+  background: #2a1518;
+  color: var(--danger);
+}
+
+/* ---- 入力欄 ---- */
+
+input,
+textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: #0a0b0d;
+  color: var(--text);
+  font: inherit;
+  font-size: 12px;
+}
+
+textarea {
+  width: 100%;
+  resize: vertical;
+}
+
 /* ---- ツールバー ---- */
 
 .toolbar {
@@ -36,47 +114,51 @@ body {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 0 8px;
-  background: #111;
+  padding: 0 12px;
+  /* 背景を敷かない。時計の帯と地続きにして上部を一続きの黒に見せる。 */
 }
 
-.toolbar button {
-  min-width: 44px;
-  /* 指で押せる高さを確保する（iPad 前提） */
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #1c1c1c;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
+.actions {
+  display: flex;
+  gap: 6px;
 }
 
-.toolbar button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
-.toolbar button[aria-pressed='true'] {
-  border-color: #fff;
-  background: #fff;
-  color: #000;
-}
-
+/* 分割数の切り替え。1 つの土台に 2 つ並べ、選択中だけ面を持たせる。 */
 .layouts {
   display: flex;
-  gap: 4px;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 11px;
+  background: var(--track);
+}
+
+.layouts button {
+  min-width: 62px;
+  background: transparent;
+  color: var(--text-dim);
+}
+
+.layouts button:hover:not(:disabled) {
+  background: transparent;
+  color: var(--text);
+}
+
+.layouts button[aria-pressed='true'] {
+  background: var(--surface-raised);
+  color: #fff;
 }
 
 .count {
   /* 左のボタン群と右のボタン群を引き離す */
   margin-right: auto;
-  color: #888;
+  /* 都市名と同じ扱いにして、情報の序列を揃える */
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- URL 追加パネル ---- */
+/* ---- かぶせて出すパネル ---- */
 
 .panel {
   /* グリッドにかぶせる。レイアウトを押し出すと再生中の iframe がリサイズされる。 */
@@ -85,20 +167,12 @@ body {
   left: 0;
   right: 0;
   z-index: 1;
-  padding: 8px;
-  background: #111;
-  border-bottom: 1px solid #333;
-}
-
-.panel textarea {
-  width: 100%;
-  padding: 8px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #000;
-  color: #fff;
-  font: inherit;
-  resize: vertical;
+  padding: 12px;
+  /* 半透明にして、下の映像にかぶせていることを伝える */
+  background: rgba(8, 9, 11, 0.9);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--line);
 }
 
 .panel__actions {
@@ -108,36 +182,14 @@ body {
   margin-top: 8px;
 }
 
-.panel__actions button {
-  min-height: 32px;
-  padding: 0 14px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #1c1c1c;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.panel__actions button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
-
 .link {
   width: 100%;
-  padding: 8px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #000;
-  color: #fff;
-  font: inherit;
 }
 
 /* ---- 枠ごとの編集 ---- */
 
 .slots {
-  margin: 0 0 8px;
+  margin: 0 0 10px;
   padding: 0;
   list-style: none;
 }
@@ -151,41 +203,26 @@ body {
 
 .slot__number {
   flex: 0 0 auto;
-  min-width: 24px;
-  padding: 2px 0;
-  border-radius: 4px;
-  background: #333;
-  font-weight: 700;
+  min-width: 26px;
+  padding: 3px 0;
+  border-radius: 7px;
+  background: var(--surface-raised);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
   text-align: center;
+  color: var(--text-dim);
 }
 
 .slot__input {
   /* 長い URL でも行を崩さない。縮んでよい要素はこれだけ。 */
   flex: 1 1 0;
   min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #000;
-  color: #fff;
-  font: inherit;
 }
 
 .slot button {
   flex: 0 0 auto;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #1c1c1c;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
-.slot button:disabled {
-  opacity: 0.4;
-  cursor: default;
+  padding: 0 12px;
 }
 
 .slot .note {
@@ -205,6 +242,7 @@ body {
 .banner__text {
   margin: 0;
   flex: 1 1 200px;
+  font-size: 12px;
 }
 
 .banner__actions {
@@ -212,24 +250,15 @@ body {
   gap: 8px;
 }
 
-.banner__actions button {
-  min-height: 32px;
-  padding: 0 14px;
-  border: 1px solid #333;
-  border-radius: 6px;
-  background: #1c1c1c;
-  color: #fff;
-  font: inherit;
-  cursor: pointer;
-}
-
 .note {
   margin: 8px 0 0;
-  color: #888;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--text-dim);
 }
 
 .note--error {
-  color: #ff8a8a;
+  color: var(--danger);
   overflow-wrap: anywhere;
 }
 
@@ -336,15 +365,19 @@ body {
 
 .cell__number {
   position: absolute;
-  top: 4px;
-  left: 4px;
-  min-width: 24px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  background: rgba(0, 0, 0, 0.75);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
+  top: 6px;
+  left: 6px;
+  min-width: 22px;
+  padding: 3px 7px;
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.5);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
   text-align: center;
   /* 映像の上に出るだけで、クリックは下の iframe に通したい */
   pointer-events: none;
@@ -356,7 +389,10 @@ body {
 }
 
 .cell--empty {
-  border: 1px dashed #222;
+  /* 空き枠は「そこに枠がある」ことだけ伝われば十分。線は限界まで弱くする。 */
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  align-items: center;
+  justify-content: center;
 }
 
 .cell iframe {

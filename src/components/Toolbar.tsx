@@ -85,15 +85,17 @@ export default function Toolbar({
           {count} / {MAX_PLAYERS} 本
         </span>
 
-        <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
-          {editing ? '閉じる' : count === 0 ? 'ライブ動画を追加' : 'ライブ動画を変更'}
-        </button>
-        <button type="button" onClick={handleCopyLink} disabled={count === 0}>
-          {copyState === 'copied' ? 'コピーした' : '設定リンクをコピー'}
-        </button>
-        <button type="button" onClick={handleClear} disabled={count === 0}>
-          全消去
-        </button>
+        <div className="actions">
+          <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
+            {editing ? '閉じる' : count === 0 ? 'ライブ動画を追加' : 'ライブ動画を変更'}
+          </button>
+          <button type="button" onClick={handleCopyLink} disabled={count === 0}>
+            {copyState === 'copied' ? 'コピーした' : '設定リンクをコピー'}
+          </button>
+          <button type="button" className="danger" onClick={handleClear} disabled={count === 0}>
+            全消去
+          </button>
+        </div>
       </div>
 
       {copyState === 'failed' && (
