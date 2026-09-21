@@ -1,6 +1,12 @@
 import { useEffect, useState } from 'react'
 import { CITIES, type City } from '../lib/cities'
-import { cityTime, formatClock, type CityTime } from '../lib/sun'
+import {
+  cityTime,
+  formatClock,
+  formatCountdown,
+  nextSunEvent,
+  type CityTime,
+} from '../lib/sun'
 
 // 秒は出さないので 10 秒ごとで足りる。9 本再生中の負荷を増やしたくない。
 const TICK_MS = 10_000
@@ -11,6 +17,17 @@ const DAY = '#9dc3e6'
 
 // 日の出・日の入りの前後にこの時間だけグラデーションをかけ、薄明を表す
 const TWILIGHT_HOURS = 0.8
+
+// 端に出す日付。曜日を入れるのは、都市ごとに日付が 1 日ずれることを読み取れるようにするため。
+// 3 つに分けているのは、並び順を自分で決めるためと、9 月だけ 4 文字（Sept）になる
+// ロケールを避けて月名の幅を揃えるため。
+const WEEKDAY_FORMAT = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
+const DAY_FORMAT = new Intl.DateTimeFormat('en-US', { day: '2-digit' })
+const MONTH_FORMAT = new Intl.DateTimeFormat('en-US', { month: 'short' })
+
+function formatDate(at: Date): string {
+  return `${WEEKDAY_FORMAT.format(at)} ${DAY_FORMAT.format(at)} ${MONTH_FORMAT.format(at)}`
+}
 
 type Props = {
   /** 配信名を再表示する。映像をタップするとプレイヤーが反応するため、
@@ -26,11 +43,37 @@ export default function WorldClock({ onReveal }: Props) {
     return () => window.clearInterval(timer)
   }, [])
 
+  const next = nextSunEvent(CITIES, now)
+
   return (
     <button type="button" className="world" onClick={onReveal} aria-label="Show stream names">
-      {CITIES.map((city) => (
-        <CityClock key={city.timeZone} city={city} now={now} />
-      ))}
+      <div className="edge">
+        <div className="edge__label">Today</div>
+        <div className="edge__value">{formatDate(now)}</div>
+      </div>
+
+      <div className="cities">
+        {CITIES.map((city) => (
+          <CityClock key={city.timeZone} city={city} now={now} />
+        ))}
+      </div>
+
+      <div className="edge edge--right">
+        <div className="edge__label">Next</div>
+        {next === null ? (
+          <div className="edge__value">—</div>
+        ) : (
+          <div
+            className="edge__value"
+            aria-label={`${next.city.name} ${next.kind} in ${formatCountdown(next.minutesUntil)}`}
+          >
+            {next.city.label}{' '}
+            {/* 上向きが日の出、下向きが日の入り。意味は読み上げ用の文で補う。 */}
+            <span aria-hidden="true">{next.kind === 'sunrise' ? '↑' : '↓'}</span>{' '}
+            {formatCountdown(next.minutesUntil)}
+          </div>
+        )}
+      </div>
     </button>
   )
 }

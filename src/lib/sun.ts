@@ -1,6 +1,8 @@
 // 日の出・日の入りと現地時刻を求める。
 // すべてブラウザ内の計算で完結する。外部サービスも API キーも使わない。
 
+import type { City } from './cities'
+
 const DEGREES = Math.PI / 180
 
 // ユリウス日と Unix 時間の差。1970-01-01T00:00:00Z のユリウス日。
@@ -14,6 +16,13 @@ const SUNRISE_ALTITUDE = -0.833
 
 const HOURS_PER_DAY = 24
 const MS_PER_DAY = 86_400_000
+
+export type SunEvent = {
+  city: City
+  kind: 'sunrise' | 'sunset'
+  /** 残り時間（分） */
+  minutesUntil: number
+}
 
 export type CityTime = {
   /** 現地時刻。0 以上 24 未満の小数時間 */
@@ -146,8 +155,50 @@ function isDaylight(hours: number, sunrise: number | null, sunset: number | null
   return hours >= sunrise || hours < sunset
 }
 
+/**
+ * 一覧の中で次に日の出か日の入りを迎える都市を返す。
+ * 「あと何分」は時差に依存しない量なので、各都市の現地時刻で素直に引き算できる。
+ */
+export function nextSunEvent(cities: City[], at: Date): SunEvent | null {
+  let soonest: SunEvent | null = null
+
+  for (const city of cities) {
+    const { hours, sunrise, sunset } = cityTime(
+      city.latitude,
+      city.longitude,
+      city.timeZone,
+      at,
+    )
+    // 極夜・白夜の都市は境目を迎えないので飛ばす
+    if (sunrise === null || sunset === null) continue
+
+    for (const [kind, target] of [
+      ['sunrise', sunrise],
+      ['sunset', sunset],
+    ] as const) {
+      const minutesUntil = Math.round(wrapHours(target - hours) * 60)
+      if (soonest === null || minutesUntil < soonest.minutesUntil) {
+        soonest = { city, kind, minutesUntil }
+      }
+    }
+  }
+  return soonest
+}
+
+/** 0 以上 24 未満に折り返す。過ぎた時刻は翌日の同じ時刻として扱う。 */
+function wrapHours(hours: number): number {
+  return ((hours % HOURS_PER_DAY) + HOURS_PER_DAY) % HOURS_PER_DAY
+}
+
 export function formatClock(hours: number): string {
   const whole = Math.floor(hours) % HOURS_PER_DAY
   const minutes = Math.floor((hours - Math.floor(hours)) * 60)
   return `${String(whole).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
+}
+
+/** 残り時間を h:mm で表す。時刻ではなく長さなので時は 0 詰めしない。 */
+export function formatCountdown(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  return `${hours}:${String(minutes).padStart(2, '0')}`
 }

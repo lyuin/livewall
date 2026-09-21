@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CITIES } from './cities'
-import { cityTime, formatClock } from './sun'
+import { cityTime, formatClock, formatCountdown, nextSunEvent } from './sun'
 
 function city(label: string) {
   const found = CITIES.find((candidate) => candidate.label === label)
@@ -90,5 +90,49 @@ describe('formatClock', () => {
     expect(formatClock(0)).toBe('00:00')
     expect(formatClock(5.5)).toBe('05:30')
     expect(formatClock(23.99)).toBe('23:59')
+  })
+})
+
+describe('nextSunEvent', () => {
+  const at = new Date('2026-09-21T02:00:00Z')
+
+  it('一覧の中で最も早く境目を迎える都市を返す', () => {
+    const event = nextSunEvent(CITIES, at)
+    expect(event).not.toBeNull()
+
+    // 各都市の日の出と日の入りまでの残り時間を独立に計算し、最小と一致することを見る
+    const candidates: number[] = []
+    for (const target of CITIES) {
+      const time = cityTime(target.latitude, target.longitude, target.timeZone, at)
+      for (const boundary of [time.sunrise, time.sunset]) {
+        if (boundary === null) continue
+        candidates.push(Math.round((((boundary - time.hours) % 24 + 24) % 24) * 60))
+      }
+    }
+
+    expect(event?.minutesUntil).toBe(Math.min(...candidates))
+  })
+
+  it('残り時間は 24 時間の範囲に収まる', () => {
+    const event = nextSunEvent(CITIES, at)
+    expect(event?.minutesUntil).toBeGreaterThanOrEqual(0)
+    expect(event?.minutesUntil).toBeLessThan(24 * 60)
+  })
+
+  it('都市が無ければ null', () => {
+    expect(nextSunEvent([], at)).toBeNull()
+  })
+
+  it('返す種別は日の出か日の入りのどちらか', () => {
+    expect(['sunrise', 'sunset']).toContain(nextSunEvent(CITIES, at)?.kind)
+  })
+})
+
+describe('formatCountdown', () => {
+  it('残り時間は h:mm で、時は 0 詰めしない', () => {
+    expect(formatCountdown(0)).toBe('0:00')
+    expect(formatCountdown(24)).toBe('0:24')
+    expect(formatCountdown(95)).toBe('1:35')
+    expect(formatCountdown(725)).toBe('12:05')
   })
 })
