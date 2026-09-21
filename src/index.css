@@ -117,6 +117,10 @@ textarea {
   align-items: center;
   padding: 0 12px;
   cursor: pointer;
+  /* 編集中の遮断層より上に置く。Done を押せないと閉じられなくなるため。
+     他のボタンは個別に無効化して触れないようにしている。 */
+  position: relative;
+  z-index: 3;
   /* 背景を敷かない。時計の帯と地続きにして上部を一続きの黒に見せる。 */
 }
 
@@ -170,6 +174,83 @@ textarea {
   color: #fff;
 }
 
+/* ---- 何も入っていないときの案内 ---- */
+
+.guide {
+  /* グリッドの領域にぴったり重ねる。ツールバーと時計の高さは変数で持っているので
+     ここで計算できる。 */
+  position: fixed;
+  top: calc(var(--toolbar-h) + var(--info-h));
+  right: 0;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 0 24px;
+  /* 見せるだけ。下にあるものへの操作を奪わない。 */
+  pointer-events: none;
+}
+
+.guide__lead {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+
+.guide__steps {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 13px;
+  color: #8b93a1;
+}
+
+.guide__steps li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.guide__number {
+  flex: 0 0 auto;
+  min-width: 22px;
+  padding: 2px 0;
+  border-radius: 7px;
+  background: var(--surface-raised);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  color: var(--text-dim);
+}
+
+.guide__note {
+  margin: 0;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: #5a6069;
+}
+
+/* ---- 編集中の遮断層 ---- */
+
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  /* わずかに暗くするのは、この範囲が今は触れないことを見て分かるようにするため。
+     濃くすると枠の番号と配信名が読めなくなり、編集の手がかりを失う。 */
+  background: rgba(0, 0, 0, 0.3);
+}
+
 /* ---- かぶせて出すパネル ---- */
 
 .panel {
@@ -178,7 +259,7 @@ textarea {
   top: var(--toolbar-h);
   left: 0;
   right: 0;
-  z-index: 1;
+  z-index: 2;
   padding: 12px;
   /* 半透明にして、下の映像にかぶせていることを伝える */
   background: rgba(8, 9, 11, 0.9);

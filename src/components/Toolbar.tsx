@@ -96,7 +96,9 @@ export default function Toolbar({
    * そうしないと Copy link を押した瞬間にツールバーが消える。
    */
   function handleRowClick(event: MouseEvent<HTMLDivElement>) {
-    if ((event.target as HTMLElement).closest('button') !== null) {
+    // 編集中は切り替えない。見た目は変わらないが、裏で状態が変わって
+    // 閉じた直後に消えるという分かりにくい挙動になる。
+    if (editing || (event.target as HTMLElement).closest('button') !== null) {
       onInteract()
       return
     }
@@ -115,6 +117,8 @@ export default function Toolbar({
                 key={value}
                 type="button"
                 aria-pressed={value === layout}
+                // 編集が終わるまで他の操作はさせない
+                disabled={editing}
                 onClick={() => onLayoutChange(value)}
               >
                 {layoutLabel(value)}
@@ -126,7 +130,7 @@ export default function Toolbar({
             <button
               type="button"
               onClick={() => onPlayingChange(!playing)}
-              disabled={count === 0}
+              disabled={count === 0 || editing}
             >
               {playing ? 'Stop all' : 'Play all'}
             </button>
@@ -139,7 +143,7 @@ export default function Toolbar({
               // 空のセットは控える意味がないので印を出さない。
               className={unsaved && count > 0 ? 'is-pending' : undefined}
               onClick={handleCopyLink}
-              disabled={count === 0}
+              disabled={count === 0 || editing}
             >
               {copyState === 'copied' ? 'Copied' : 'Copy link'}
             </button>
@@ -184,6 +188,10 @@ export default function Toolbar({
           </div>
         </div>
       )}
+
+      {/* 編集中は映像も時計バーも触らせない。透明な層で画面全体を覆って
+          クリックを受け止める。ツールバーはこれより上にあるので Done は押せる。 */}
+      {editing && <div className="backdrop" aria-hidden="true" />}
 
       {editing && (
         // グリッドにかぶせる。ツールバー内に置くとグリッドの高さが変わり、
