@@ -64,20 +64,20 @@ export default function Toolbar({ layout, videoIds, onLayoutChange, onAdd, onCle
               aria-pressed={value === layout}
               onClick={() => onLayoutChange(value)}
             >
-              {value}
+              {value}分割
             </button>
           ))}
         </div>
 
         <span className="count">
-          {count} / {MAX_PLAYERS}
+          {count} / {MAX_PLAYERS} 本
         </span>
 
         <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
-          {open ? '閉じる' : 'URL を追加'}
+          {open ? '閉じる' : 'ライブ動画を追加'}
         </button>
         <button type="button" onClick={handleCopyLink} disabled={count === 0}>
-          {copyState === 'copied' ? 'コピーした' : 'リンクをコピー'}
+          {copyState === 'copied' ? 'コピーした' : '設定リンクをコピー'}
         </button>
         <button type="button" onClick={handleClear} disabled={count === 0}>
           全消去
