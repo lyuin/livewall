@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { fetchVideoInfo, type InfoMap } from '../lib/oembed'
 import { loadVideoInfoCache, rememberVideoInfo } from '../lib/videoInfoCache'
 
@@ -9,17 +9,16 @@ import { loadVideoInfoCache, rememberVideoInfo } from '../lib/videoInfoCache'
 export function useVideoInfo(videoIds: string[]): InfoMap {
   const [info, setInfo] = useState<InfoMap>(loadVideoInfoCache)
 
-  // 問い合わせ済みの ID。state を見て判断すると effect の依存に info が必要になり、
-  // 取得するたびに effect が再実行されて止まらなくなる。
-  const requested = useRef(new Set<string>())
+  // 「もう投げた ID」の集合。保存済みのぶんを初期値にしておく。
+  // 取得済みかどうかを info から判断すると effect の依存に info が必要になり、
+  // 1 件取得するたびに effect が再実行されて止まらなくなる。
+  const [requested] = useState(() => new Set(Object.keys(info)))
 
   useEffect(() => {
-    const pending = videoIds.filter(
-      (videoId) => !requested.current.has(videoId) && info[videoId] === undefined,
-    )
+    const pending = videoIds.filter((videoId) => !requested.has(videoId))
     if (pending.length === 0) return
 
-    for (const videoId of pending) requested.current.add(videoId)
+    for (const videoId of pending) requested.add(videoId)
 
     let cancelled = false
 
@@ -29,6 +28,7 @@ export function useVideoInfo(videoIds: string[]): InfoMap {
         if (cancelled) return
 
         // 成功だけ保存する。通信失敗を覚えると次回も失敗のまま表示され続ける。
+        // ただし同じ表示のあいだは再試行しない。次に開いたときに取り直す。
         if (result.status === 'ok') rememberVideoInfo(videoId, result)
 
         setInfo((current) => ({ ...current, [videoId]: result }))
@@ -38,9 +38,7 @@ export function useVideoInfo(videoIds: string[]): InfoMap {
     return () => {
       cancelled = true
     }
-    // info は初回の保存済みデータを読むためだけに使うので依存に入れない。
-    // 入れると取得するたびに effect が再実行されて止まらなくなる。
-  }, [videoIds])
+  }, [videoIds, requested])
 
   return info
 }
