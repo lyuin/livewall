@@ -215,11 +215,25 @@ textarea {
   list-style: none;
 }
 
+/* 左端の配信名と右端のボタンが離れているので、行そのものに面を持たせて帯として追えるようにする。
+   線を足すのではなく面の明るさで区切るのは、他の要素から枠線を外してあるため。
+   明るさは パネル → 行 → ボタン の順に上げて、入れ子が読めるようにしている。 */
 .slot {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 3px 0;
+  padding: 4px 8px;
+  border-radius: 9px;
+  background: #0e1014;
+  transition: background 160ms ease;
+}
+
+.slot + .slot {
+  margin-top: 3px;
+}
+
+.slot:hover {
+  background: #13161b;
 }
 
 .slot__number {
