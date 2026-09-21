@@ -1,4 +1,5 @@
 import { LAYOUTS, MAX_PLAYERS, type Layout } from './layout'
+import { isVideoId } from './youtube'
 
 // 保存形式を変えるときはキーの版を上げる。古い形式を読んで壊れるより作り直す方が安い。
 const KEY = 'livewall.v2'
@@ -85,8 +86,10 @@ function readJson(key: string): unknown {
 function sanitize(value: unknown): ActiveSet {
   const { videoIds, layout } = value as Partial<PlayerSet>
   return {
+    // 文字種まで検証する。共有リンク側と同じ厳しさに揃えるため。
+    // ここを緩めると、書き換えられた保存データがそのままプレイヤーの URL に入る。
     videoIds: Array.isArray(videoIds)
-      ? videoIds.filter((id): id is string => typeof id === 'string').slice(0, MAX_PLAYERS)
+      ? videoIds.filter((id): id is string => typeof id === 'string' && isVideoId(id)).slice(0, MAX_PLAYERS)
       : [],
     layout: isLayout(layout) ? layout : DEFAULT_LAYOUT,
   }
