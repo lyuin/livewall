@@ -17,11 +17,11 @@ export default function SlotEditor({ layout, videoIds, info, onReplace, onRemove
    */
   function submit(index: number, text: string): string | null {
     const videoId = extractVideoId(text)
-    if (videoId === null) return 'YouTube の URL として読めなかった'
+    if (videoId === null) return 'Not a YouTube URL'
 
     const duplicate = videoIds.indexOf(videoId)
     if (duplicate !== -1 && duplicate !== index) {
-      return `${duplicate + 1} 番と同じ配信`
+      return `Same as #${duplicate + 1}`
     }
 
     onReplace(index, videoId)
@@ -88,14 +88,14 @@ function SlotRow({ number, videoId, info, hidden, onSubmit, onRemove }: RowProps
             type="text"
             value={text}
             onChange={(event) => setText(event.target.value)}
-            aria-label={`${number} 番の URL`}
+            aria-label={`URL for slot ${number}`}
             autoFocus
           />
           <button type="button" onClick={apply} disabled={text.trim() === ''}>
-            決定
+            Save
           </button>
           <button type="button" onClick={cancel}>
-            やめる
+            Cancel
           </button>
         </>
       ) : (
@@ -104,12 +104,12 @@ function SlotRow({ number, videoId, info, hidden, onSubmit, onRemove }: RowProps
             <span className="slot__title">{label.title}</span>
             {label.author !== '' && <span className="slot__author">{label.author}</span>}
           </span>
-          {hidden && <span className="note">非表示</span>}
+          {hidden && <span className="note">Hidden</span>}
           <button type="button" onClick={() => setEditing(true)}>
-            変更
+            Replace
           </button>
           <button type="button" className="danger" onClick={onRemove}>
-            削除
+            Remove
           </button>
         </>
       )}
@@ -123,15 +123,15 @@ function toLabel(
   info: InfoResult | undefined,
   videoId: string,
 ): { title: string; author: string; isError: boolean } {
-  if (info === undefined) return { title: '読み込み中', author: '', isError: false }
+  if (info === undefined) return { title: 'Loading', author: '', isError: false }
 
   switch (info.status) {
     case 'ok':
       return { title: info.title, author: info.author, isError: false }
     case 'missing':
-      return { title: '見つからない（削除または非公開）', author: '', isError: true }
+      return { title: 'Unavailable — deleted or private', author: '', isError: true }
     case 'blocked':
-      return { title: '埋め込みが許可されていない可能性', author: '', isError: true }
+      return { title: 'Embedding may be blocked', author: '', isError: true }
     default:
       // 通信できなかったときはタイトルが分からないので ID を出す
       return { title: videoId, author: '', isError: false }

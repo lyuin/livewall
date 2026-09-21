@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import SlotEditor from './SlotEditor'
-import { LAYOUTS, MAX_PLAYERS, type Layout } from '../lib/layout'
+import { LAYOUTS, MAX_PLAYERS, layoutLabel, type Layout } from '../lib/layout'
 import type { InfoMap } from '../lib/oembed'
 import { buildShareLink } from '../lib/share'
 import { extractVideoIds } from '../lib/youtube'
@@ -51,7 +51,7 @@ export default function Toolbar({
   }
 
   function handleClear() {
-    if (count > 0 && !window.confirm(`${count} 本すべて削除する？`)) return
+    if (count > 0 && !window.confirm(`Remove all ${count} streams?`)) return
     onClear()
   }
 
@@ -71,7 +71,7 @@ export default function Toolbar({
   return (
     <>
       <div className="toolbar">
-        <div className="layouts" role="group" aria-label="分割数">
+        <div className="layouts" role="group" aria-label="Grid layout">
           {LAYOUTS.map((value) => (
             <button
               key={value}
@@ -79,44 +79,42 @@ export default function Toolbar({
               aria-pressed={value === layout}
               onClick={() => onLayoutChange(value)}
             >
-              {value}分割
+              {layoutLabel(value)}
             </button>
           ))}
         </div>
 
         <span className="count">
-          {count} / {MAX_PLAYERS} 本
+          {count} / {MAX_PLAYERS}
         </span>
 
         <div className="actions">
           <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
-            {editing ? '閉じる' : count === 0 ? 'ライブ動画を追加' : 'ライブ動画を変更'}
+            {editing ? 'Done' : count === 0 ? 'Add streams' : 'Edit streams'}
           </button>
           <button type="button" onClick={handleCopyLink} disabled={count === 0}>
-            {copyState === 'copied' ? 'コピーした' : '設定リンクをコピー'}
+            {copyState === 'copied' ? 'Copied' : 'Copy link'}
           </button>
           <button type="button" className="danger" onClick={handleClear} disabled={count === 0}>
-            全消去
+            Clear all
           </button>
         </div>
       </div>
 
       {copyState === 'failed' && (
         <div className="panel">
-          <p className="note note--error">
-            クリップボードにコピーできなかった。下のリンクを手でコピーして。
-          </p>
-          <input className="link" type="text" value={link} readOnly aria-label="共有リンク" />
+          <p className="note note--error">Couldn&apos;t copy. Copy the link manually.</p>
+          <input className="link" type="text" value={link} readOnly aria-label="Share link" />
           <div className="panel__actions">
             <button type="button" onClick={() => setCopyState('idle')}>
-              閉じる
+              Close
             </button>
           </div>
         </div>
       )}
 
       {editing && (
-        // グリッドの上にかぶせる。ツールバー内に置くとグリッドの高さが変わり、
+        // グリッドにかぶせる。ツールバー内に置くとグリッドの高さが変わり、
         // 開閉のたびに再生中の iframe がリサイズされてしまう。
         <div className="panel">
           {count > 0 && (
@@ -130,21 +128,19 @@ export default function Toolbar({
           )}
 
           {full ? (
-            <p className="note">
-              上限 {MAX_PLAYERS} 本。入れ替えるには番号の行の URL を書き換えて変更する。
-            </p>
+            <p className="note">Limit reached ({MAX_PLAYERS}). Use Replace on a row to swap.</p>
           ) : (
             <>
               <textarea
                 value={text}
                 onChange={(event) => setText(event.target.value)}
-                aria-label="追加する YouTube の URL"
-                placeholder="空いている枠に追加する URL（1 行に 1 つ。まとめて貼れる）"
+                aria-label="YouTube URLs to add"
+                placeholder="Paste YouTube URLs — one per line"
                 rows={3}
               />
               <div className="panel__actions">
                 <button type="button" onClick={handleAdd} disabled={text.trim() === ''}>
-                  追加
+                  Add
                 </button>
               </div>
             </>
@@ -152,7 +148,7 @@ export default function Toolbar({
 
           {invalid.length > 0 && (
             <p className="note note--error">
-              {invalid.length} 行は YouTube の URL として読めなかった: {invalid.join(' / ')}
+              {invalid.length} not recognised as YouTube URLs: {invalid.join(' / ')}
             </p>
           )}
         </div>

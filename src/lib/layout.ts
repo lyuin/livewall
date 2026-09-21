@@ -9,3 +9,11 @@ export const MAX_PLAYERS = 9
 // 16:9 のセルを並べたときの列数。4 → 2x2, 9 → 3x3。
 // どちらもグリッド全体が 16:9 になるので、セルの縦横比を崩さずに並べられる。
 export const COLUMNS: Record<Layout, number> = { 4: 2, 9: 3 }
+
+/**
+ * ボタンに出す表記。格子の形そのものを示すので言語に依存せず、説明も要らない。
+ */
+export function layoutLabel(layout: Layout): string {
+  const columns = COLUMNS[layout]
+  return `${columns} × ${layout / columns}`
+}

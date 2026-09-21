@@ -27,7 +27,7 @@ export default function WorldClock({ onReveal }: Props) {
   }, [])
 
   return (
-    <button type="button" className="world" onClick={onReveal} aria-label="配信名を表示">
+    <button type="button" className="world" onClick={onReveal} aria-label="Show stream names">
       {CITIES.map((city) => (
         <CityClock key={city.timeZone} city={city} now={now} />
       ))}
@@ -44,7 +44,10 @@ function CityClock({ city, now }: { city: City; now: Date }) {
       <div className="city__name">{city.label}</div>
 
       {/* 昼夜を色だけに担わせないよう、読み上げ用の文にも入れる */}
-      <div className="city__time" aria-label={`${city.name} ${clock} ${time.isDay ? '昼' : '夜'}`}>
+      <div
+        className="city__time"
+        aria-label={`${city.name} ${clock} ${time.isDay ? 'day' : 'night'}`}
+      >
         {clock}
       </div>
 

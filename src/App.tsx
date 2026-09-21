@@ -120,15 +120,15 @@ export default function App() {
       {pendingShare !== null && (
         <div className="panel banner">
           <p className="banner__text">
-            共有リンクに {pendingShare.videoIds.length} 本入っている。取り込むと今の
-            {videoIds.length} 本は消える。
+            This link has {pendingShare.videoIds.length} streams. Importing replaces the current{' '}
+            {videoIds.length}.
           </p>
           <div className="banner__actions">
             <button type="button" onClick={acceptShare}>
-              取り込む
+              Import
             </button>
             <button type="button" onClick={() => setPendingShare(null)}>
-              無視する
+              Dismiss
             </button>
           </div>
         </div>

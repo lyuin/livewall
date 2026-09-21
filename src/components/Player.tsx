@@ -28,7 +28,7 @@ export default function Player({
     <div className="cell" hidden={hidden}>
       <iframe
         src={src}
-        title={caption?.title ?? `ライブ配信 ${number}`}
+        title={caption?.title ?? `Stream ${number}`}
         allow="autoplay; encrypted-media; picture-in-picture"
         allowFullScreen
       />
@@ -67,7 +67,7 @@ function toCaption(info: InfoResult | undefined): Caption | null {
   if (info.status === 'ok') return { title: info.title, author: info.author, isError: false }
 
   if (info.status === 'missing') {
-    return { title: '見つからない（削除または非公開）', author: '', isError: true }
+    return { title: 'Unavailable — deleted or private', author: '', isError: true }
   }
-  return { title: '埋め込みが許可されていない可能性', author: '', isError: true }
+  return { title: 'Embedding may be blocked', author: '', isError: true }
 }
