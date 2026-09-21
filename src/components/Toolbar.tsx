@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, type MouseEvent } from 'react'
 import SlotEditor from './SlotEditor'
 import { LAYOUTS, MAX_PLAYERS, layoutLabel, type Layout } from '../lib/layout'
 import type { InfoMap } from '../lib/oembed'
@@ -9,10 +9,12 @@ type Props = {
   layout: Layout
   videoIds: string[]
   info: InfoMap
-  /** 操作しないと消える。時計の帯をタップすると戻る。 */
+  /** 操作しないと消える。時計の帯かこの行をタップすると戻る。 */
   visible: boolean
   /** ツールバーを触っている間は消さないよう、タイマーを張り直させる。 */
   onInteract: () => void
+  /** 行の余白を押したときの表示切り替え。 */
+  onToggle: () => void
   /** 編集パネルの開閉。グリッド側の番号表示と連動させるため App が持つ。 */
   editing: boolean
   onEditingChange: (editing: boolean) => void
@@ -31,6 +33,7 @@ export default function Toolbar({
   info,
   visible,
   onInteract,
+  onToggle,
   editing,
   onEditingChange,
   onLayoutChange,
@@ -74,30 +77,46 @@ export default function Toolbar({
     }
   }
 
+  /**
+   * 行のどこを押しても反応させる。ただしボタンのクリックもここまで上がってくるので、
+   * ボタンの上なら切り替えずにタイマーを延ばすだけにする。
+   * そうしないと Copy link を押した瞬間にツールバーが消える。
+   */
+  function handleRowClick(event: MouseEvent<HTMLDivElement>) {
+    if ((event.target as HTMLElement).closest('button') !== null) {
+      onInteract()
+      return
+    }
+    onToggle()
+  }
+
   return (
     <>
-      {/* onClick は中のボタンから上がってくる。操作中に消えないようタイマーを延ばす。 */}
-      <div className={`toolbar${visible ? '' : ' toolbar--hidden'}`} onClick={onInteract}>
-        <div className="layouts" role="group" aria-label="Grid layout">
-          {LAYOUTS.map((value) => (
-            <button
-              key={value}
-              type="button"
-              aria-pressed={value === layout}
-              onClick={() => onLayoutChange(value)}
-            >
-              {layoutLabel(value)}
-            </button>
-          ))}
-        </div>
+      {/* 行そのものは消さない。中身だけ消して、行は常に切り替えの受け皿として残す。
+          行まで visibility を切ると、消えている状態では押せなくなってしまう。 */}
+      <div className="toolbar" onClick={handleRowClick}>
+        <div className={`toolbar__content${visible ? '' : ' toolbar__content--hidden'}`}>
+          <div className="layouts" role="group" aria-label="Grid layout">
+            {LAYOUTS.map((value) => (
+              <button
+                key={value}
+                type="button"
+                aria-pressed={value === layout}
+                onClick={() => onLayoutChange(value)}
+              >
+                {layoutLabel(value)}
+              </button>
+            ))}
+          </div>
 
-        <div className="actions">
-          <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
-            {editing ? 'Done' : count === 0 ? 'Add streams' : 'Edit streams'}
-          </button>
-          <button type="button" onClick={handleCopyLink} disabled={count === 0}>
-            {copyState === 'copied' ? 'Copied' : 'Copy link'}
-          </button>
+          <div className="actions">
+            <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
+              {editing ? 'Done' : count === 0 ? 'Add streams' : 'Edit streams'}
+            </button>
+            <button type="button" onClick={handleCopyLink} disabled={count === 0}>
+              {copyState === 'copied' ? 'Copied' : 'Copy link'}
+            </button>
+          </div>
         </div>
       </div>
 

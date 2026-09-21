@@ -109,13 +109,22 @@ textarea {
 
 /* ---- ツールバー ---- */
 
+/* 行そのものは消さない。中身が消えていてもここは押せるようにして、
+   表示の切り替えの受け皿にする。 */
 .toolbar {
   flex: 0 0 var(--toolbar-h);
   display: flex;
   align-items: center;
-  gap: 8px;
   padding: 0 12px;
+  cursor: pointer;
   /* 背景を敷かない。時計の帯と地続きにして上部を一続きの黒に見せる。 */
+}
+
+.toolbar__content {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
   transition:
     opacity 500ms ease,
     visibility 500ms ease;
@@ -128,13 +137,12 @@ textarea {
   margin-left: auto;
 }
 
-/* 操作しないと消える。高さは確保したまま透明にする。
+/* 操作しないと消える。行の高さは確保したまま中身だけ隠す。
    高さを詰めるとグリッドが再計算され、映像の大きさが動いてしまう。 */
-.toolbar--hidden {
+.toolbar__content--hidden {
   opacity: 0;
-  /* 見えない状態でキーボードのタブ移動が入らないようにする */
+  /* 見えない状態でキーボードのタブ移動とクリックが入らないようにする */
   visibility: hidden;
-  pointer-events: none;
 }
 
 /* 分割数の切り替え。1 つの土台に 2 つ並べ、選択中だけ面を持たせる。 */

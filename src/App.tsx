@@ -121,6 +121,7 @@ export default function App() {
         info={info}
         visible={chromeVisible || editing}
         onInteract={revealChrome}
+        onToggle={toggleChrome}
         editing={editing}
         onEditingChange={setEditing}
         onLayoutChange={setLayout}
