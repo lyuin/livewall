@@ -123,6 +123,46 @@ body {
   cursor: default;
 }
 
+.link {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  font: inherit;
+}
+
+/* ---- 共有リンクの取り込み確認 ---- */
+
+.banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.banner__text {
+  margin: 0;
+  flex: 1 1 200px;
+}
+
+.banner__actions {
+  display: flex;
+  gap: 8px;
+}
+
+.banner__actions button {
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1c1c1c;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
 .note {
   margin: 8px 0 0;
   color: #888;

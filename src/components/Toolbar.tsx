@@ -1,20 +1,26 @@
 import { useState } from 'react'
 import { LAYOUTS, MAX_PLAYERS, type Layout } from '../lib/layout'
+import { buildShareLink } from '../lib/share'
 import { extractVideoIds } from '../lib/youtube'
 
 type Props = {
   layout: Layout
-  count: number
+  videoIds: string[]
   onLayoutChange: (layout: Layout) => void
   onAdd: (ids: string[]) => void
   onClear: () => void
 }
 
-export default function Toolbar({ layout, count, onLayoutChange, onAdd, onClear }: Props) {
+type CopyState = 'idle' | 'copied' | 'failed'
+
+export default function Toolbar({ layout, videoIds, onLayoutChange, onAdd, onClear }: Props) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState('')
   const [invalid, setInvalid] = useState<string[]>([])
+  const [copyState, setCopyState] = useState<CopyState>('idle')
+  const [link, setLink] = useState('')
 
+  const count = videoIds.length
   const full = count >= MAX_PLAYERS
 
   function handleAdd() {
@@ -32,6 +38,19 @@ export default function Toolbar({ layout, count, onLayoutChange, onAdd, onClear 
   function handleClear() {
     if (count > 0 && !window.confirm(`${count} 本すべて削除する？`)) return
     onClear()
+  }
+
+  async function handleCopyLink() {
+    const url = buildShareLink({ layout, videoIds })
+    setLink(url)
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopyState('copied')
+      window.setTimeout(() => setCopyState('idle'), 2000)
+    } catch {
+      // クリップボードが使えない場合でもリンクを失わせない。手でコピーできるよう表示する。
+      setCopyState('failed')
+    }
   }
 
   return (
@@ -57,10 +76,27 @@ export default function Toolbar({ layout, count, onLayoutChange, onAdd, onClear 
         <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
           {open ? '閉じる' : 'URL を追加'}
         </button>
+        <button type="button" onClick={handleCopyLink} disabled={count === 0}>
+          {copyState === 'copied' ? 'コピーした' : 'リンクをコピー'}
+        </button>
         <button type="button" onClick={handleClear} disabled={count === 0}>
           全消去
         </button>
       </div>
+
+      {copyState === 'failed' && (
+        <div className="panel">
+          <p className="note note--error">
+            クリップボードにコピーできなかった。下のリンクを手でコピーして。
+          </p>
+          <input className="link" type="text" value={link} readOnly aria-label="共有リンク" />
+          <div className="panel__actions">
+            <button type="button" onClick={() => setCopyState('idle')}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
 
       {open && (
         // グリッドの上にかぶせる。ツールバー内に置くとグリッドの高さが変わり、
