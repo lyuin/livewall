@@ -52,5 +52,18 @@ export function decodeShareHash(hash: string): SharedSet | null {
 
 export function buildShareLink(set: SharedSet): string {
   const { origin, pathname } = window.location
-  return `${origin}${pathname}${encodeShareHash(set)}`
+  return `${origin}${pathname}${stateHash(set)}`
+}
+
+/**
+ * そのタブの状態を表す URL。URL 自体がタブごとの保存場所になる。
+ * 空のセットではハッシュを付けない。`#1.9.` は動画 ID が 0 個で形式として読めず、
+ * 付けても次に開いたときに捨てられるだけなので。
+ */
+export function stateUrl(pathname: string, set: SharedSet): string {
+  return `${pathname}${stateHash(set)}`
+}
+
+function stateHash(set: SharedSet): string {
+  return set.videoIds.length === 0 ? '' : encodeShareHash(set)
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decodeShareHash, encodeShareHash } from './share'
+import { decodeShareHash, encodeShareHash, stateUrl } from './share'
 
 // 実在しない合成 ID を使う。リポジトリに実際の URL や動画 ID を残さないため。
 const A = 'AAAAAAAAAAA'
@@ -51,5 +51,17 @@ describe('decodeShareHash', () => {
     ['ID が空', '#1.9.'],
   ])('壊れた入力は null: %s', (_label, hash) => {
     expect(decodeShareHash(hash)).toBeNull()
+  })
+})
+
+describe('stateUrl', () => {
+  it('セットが入っていればハッシュを付ける', () => {
+    expect(stateUrl('/livewall/', { layout: 4, videoIds: [A, B] })).toBe(`/livewall/#1.4.${A}${B}`)
+  })
+
+  it('空のセットではハッシュを付けない', () => {
+    // #1.9. は動画 ID が 0 個で形式として読めないため、付けても次に開いたときに捨てられる
+    expect(stateUrl('/livewall/', { layout: 9, videoIds: [] })).toBe('/livewall/')
+    expect(decodeShareHash('#1.9.')).toBeNull()
   })
 })

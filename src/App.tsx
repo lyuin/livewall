@@ -4,53 +4,67 @@ import Grid from './components/Grid'
 import Toolbar from './components/Toolbar'
 import WorldClock from './components/WorldClock'
 import { MAX_PLAYERS, type Layout } from './lib/layout'
-import { decodeShareHash, type SharedSet } from './lib/share'
+import { decodeShareHash, stateUrl } from './lib/share'
 import { load, save, type ActiveSet } from './lib/storage'
-
-type Boot = {
-  initial: ActiveSet
-  /** 取り込むか捨てるかを利用者に確認する必要がある共有リンクの内容 */
-  pendingShare: SharedSet | null
-}
-
-function boot(): Boot {
-  const stored = load()
-  const shared = decodeShareHash(window.location.hash)
-  if (shared === null) return { initial: stored, pendingShare: null }
-
-  // ハッシュを残すとリロードのたびに共有リンクの内容へ引き戻され、以降の編集が消える
-  window.history.replaceState(null, '', window.location.pathname)
-
-  // 空の端末で開いたときは確認しない。デバイス間移行という本来の使い方で邪魔になる。
-  if (stored.videoIds.length === 0) return { initial: shared, pendingShare: null }
-
-  // 既に入っているときだけ聞く。黙って置き換えると 9 本を失う事故になる。
-  return { initial: stored, pendingShare: shared }
-}
-
-// モジュール読み込み時に 1 回だけ評価する。useState の初期化関数に入れると
-// StrictMode で 2 回呼ばれ、ハッシュの消去が二重に走る。
-const BOOT = boot()
 
 // ツールバーと配信名を出しておく時間。9 本ぶん読み終えるには 10 秒では足りなかった。
 const CHROME_VISIBLE_MS = 20_000
 
+/**
+ * このタブの初期状態。
+ * URL のハッシュがそのタブの状態で、何も付いていなければ最後に使ったセットを読む。
+ * localStorage はブラウザに 1 つしかないので、それだけではタブごとに別のセットを
+ * 持てない（後から書いたタブが前のタブのセットを潰す）。
+ */
+function boot(): ActiveSet {
+  return decodeShareHash(window.location.hash) ?? load()
+}
+
+// モジュール読み込み時に 1 回だけ評価する。useState の初期化関数に入れると
+// StrictMode で 2 回呼ばれる。
+const BOOT = boot()
+
 export default function App() {
-  const [videoIds, setVideoIds] = useState<string[]>(BOOT.initial.videoIds)
-  const [layout, setLayout] = useState<Layout>(BOOT.initial.layout)
-  const [pendingShare, setPendingShare] = useState<SharedSet | null>(BOOT.pendingShare)
+  const [videoIds, setVideoIds] = useState<string[]>(BOOT.videoIds)
+  const [layout, setLayout] = useState<Layout>(BOOT.layout)
   const [editing, setEditing] = useState(false)
   const info = useVideoInfo(videoIds)
 
-  // ツールバーと配信名の表示。時計の帯だけは常に出しておき、再表示の受け皿にする。
+  // セットを変えたがリンクを控えていない状態。この状態でタブを閉じると変更を失う。
+  const [unsaved, setUnsaved] = useState(false)
+
+  // ツールバーと配信名の表示。時計の帯だけは常に出しておき、切り替えの受け皿にする。
   const [chromeVisible, setChromeVisible] = useState(true)
   // 表示し直した時刻。値が変わることでタイマーを張り直す。
   // chromeVisible だけを見ていると、表示中にもう一度押しても状態が変わらず時間が延びない。
   const [revealedAt, setRevealedAt] = useState(() => Date.now())
 
+  // URL をこのタブの状態にする。置換なので履歴は増えず、戻るボタンは
+  // 実際に別のリンクを開いたときだけ効く。
   useEffect(() => {
+    window.history.replaceState(null, '', stateUrl(window.location.pathname, { layout, videoIds }))
+
+    // 最後に使ったセットとして控える。URL に何も付いていない状態で開いたときに使う。
     save({ videoIds, layout })
   }, [videoIds, layout])
+
+  // 同じタブで別のリンクを開いたとき、ブラウザはハッシュだけの変化では読み込み直さない。
+  // 戻る・進むでも同じなので、ここで追従する。
+  // 自分の replaceState では hashchange は起きないため、取り違えは起きない。
+  useEffect(() => {
+    function applyHash() {
+      const shared = decodeShareHash(window.location.hash)
+      if (shared === null) return
+
+      setVideoIds(shared.videoIds)
+      setLayout(shared.layout)
+      // URL と中身が一致している状態なので、控え漏れの警告は要らない
+      setUnsaved(false)
+    }
+
+    window.addEventListener('hashchange', applyHash)
+    return () => window.removeEventListener('hashchange', applyHash)
+  }, [])
 
   // 一定時間で消す。映像を覆い続けないため。
   useEffect(() => {
@@ -75,9 +89,20 @@ export default function App() {
     revealChrome()
   }
 
-  // 中身が変わったときは、今それが何なのかを知りたい場面なので配信名を出し直す。
-  // 変更を起こしたイベント側でやる。effect で videoIds を監視して出し直すと
-  // 描画のたびに state を書き換える形になり、余分な再描画を招く。
+  /**
+   * 配信のリストが変わったときの後始末。
+   * 配信名を出し直すのは、今それが何なのかを知りたい場面だから。
+   * 変更を起こしたイベント側でやるのは、effect で videoIds を監視すると
+   * 描画のたびに state を書き換える形になるため。
+   *
+   * 分割数の変更ではここを通さない。2x2 と 3x3 の切り替えは見ながら頻繁にやる操作で、
+   * 毎回リンクの控えを促すと警告に鈍感になる。失って痛いのは配信のリストの方。
+   */
+  function afterSetChange() {
+    setUnsaved(true)
+    revealChrome()
+  }
+
   function addVideoIds(ids: string[]) {
     setVideoIds((current) => {
       // 同じ配信を 2 枠に出す意味がなく、React の key も衝突するため重複は捨てる
@@ -87,7 +112,7 @@ export default function App() {
       }
       return merged.slice(0, MAX_PLAYERS)
     })
-    revealChrome()
+    afterSetChange()
   }
 
   function replaceVideoId(index: number, videoId: string) {
@@ -96,21 +121,18 @@ export default function App() {
       next[index] = videoId
       return next
     })
-    revealChrome()
+    afterSetChange()
   }
 
   function removeVideoId(index: number) {
     // 詰めて持つので、後ろの枠が 1 つずつ繰り上がる
     setVideoIds((current) => current.filter((_, position) => position !== index))
-    revealChrome()
+    afterSetChange()
   }
 
-  function acceptShare() {
-    if (pendingShare === null) return
-    setVideoIds(pendingShare.videoIds)
-    setLayout(pendingShare.layout)
-    setPendingShare(null)
-    revealChrome()
+  function clearAll() {
+    setVideoIds([])
+    afterSetChange()
   }
 
   return (
@@ -128,25 +150,10 @@ export default function App() {
         onAdd={addVideoIds}
         onReplace={replaceVideoId}
         onRemove={removeVideoId}
-        onClear={() => setVideoIds([])}
+        onClear={clearAll}
+        unsaved={unsaved}
+        onSaved={() => setUnsaved(false)}
       />
-
-      {pendingShare !== null && (
-        <div className="panel banner">
-          <p className="banner__text">
-            This link has {pendingShare.videoIds.length} streams. Importing replaces the current{' '}
-            {videoIds.length}.
-          </p>
-          <div className="banner__actions">
-            <button type="button" onClick={acceptShare}>
-              Import
-            </button>
-            <button type="button" onClick={() => setPendingShare(null)}>
-              Dismiss
-            </button>
-          </div>
-        </div>
-      )}
 
       <WorldClock onToggle={toggleChrome} />
       <Grid

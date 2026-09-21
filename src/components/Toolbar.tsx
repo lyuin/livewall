@@ -15,6 +15,9 @@ type Props = {
   onInteract: () => void
   /** 行の余白を押したときの表示切り替え。 */
   onToggle: () => void
+  /** セットを変えたがリンクを控えていない状態。タブを閉じると変更を失う。 */
+  unsaved: boolean
+  onSaved: () => void
   /** 編集パネルの開閉。グリッド側の番号表示と連動させるため App が持つ。 */
   editing: boolean
   onEditingChange: (editing: boolean) => void
@@ -41,6 +44,8 @@ export default function Toolbar({
   onReplace,
   onRemove,
   onClear,
+  unsaved,
+  onSaved,
 }: Props) {
   const [text, setText] = useState('')
   const [invalid, setInvalid] = useState<string[]>([])
@@ -70,6 +75,8 @@ export default function Toolbar({
     try {
       await navigator.clipboard.writeText(url)
       setCopyState('copied')
+      // 控えられたので、リンクを保存してほしいという促しを下げる
+      onSaved()
       window.setTimeout(() => setCopyState('idle'), 2000)
     } catch {
       // クリップボードが使えない場合でもリンクを失わせない。手でコピーできるよう表示する。
@@ -113,12 +120,45 @@ export default function Toolbar({
             <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
               {editing ? 'Done' : count === 0 ? 'Add streams' : 'Edit streams'}
             </button>
-            <button type="button" onClick={handleCopyLink} disabled={count === 0}>
+            <button
+              type="button"
+              // 控えるまで印を残す。案内バーが消えたあとも気づけるようにするため。
+              // 空のセットは控える意味がないので印を出さない。
+              className={unsaved && count > 0 ? 'is-pending' : undefined}
+              onClick={handleCopyLink}
+              disabled={count === 0}
+            >
               {copyState === 'copied' ? 'Copied' : 'Copy link'}
             </button>
           </div>
         </div>
       </div>
+
+      {/* 編集中は出さない。編集パネルと同じ位置に重なるため。
+          パネルを閉じたところで促す。 */}
+      {unsaved && count > 0 && visible && !editing && copyState !== 'failed' && (
+        <div className="panel banner">
+          <p className="banner__text">
+            This tab keeps its set in the URL. Save the new link, or the change is lost when the tab
+            closes.
+          </p>
+          <div className="banner__row">
+            <input
+              className="link"
+              type="text"
+              readOnly
+              value={buildShareLink({ layout, videoIds })}
+              aria-label="Current link"
+            />
+            <button type="button" onClick={handleCopyLink}>
+              Copy link
+            </button>
+            <button type="button" onClick={onSaved}>
+              Dismiss
+            </button>
+          </div>
+        </div>
+      )}
 
       {copyState === 'failed' && (
         <div className="panel">

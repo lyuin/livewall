@@ -284,24 +284,41 @@ textarea {
   margin: 0;
 }
 
-/* ---- 共有リンクの取り込み確認 ---- */
+/* ---- リンクの控えを促す案内 ---- */
 
 .banner {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .banner__text {
   margin: 0;
-  flex: 1 1 200px;
   font-size: 12px;
 }
 
-.banner__actions {
+.banner__row {
   display: flex;
+  align-items: center;
   gap: 8px;
+}
+
+.banner__row .link {
+  /* 長いリンクでも行を崩さない。縮んでよい要素はこれだけ。 */
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+/* 控えるまで残す印。案内バーが消えたあとも気づけるようにする。 */
+button.is-pending::after {
+  content: '';
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+  vertical-align: middle;
 }
 
 .note {
