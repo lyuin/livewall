@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useVideoInfo } from './hooks/useVideoInfo'
 import Grid from './components/Grid'
+import Guide from './components/Guide'
 import Toolbar from './components/Toolbar'
 import WorldClock from './components/WorldClock'
 import { MAX_PLAYERS, type Layout } from './lib/layout'
@@ -188,6 +189,8 @@ export default function App() {
         // 編集中は常に出す。どの枠が何かを確かめている場面なので消してはいけない。
         showCaptions={chromeVisible || editing}
       />
+
+      {videoIds.length === 0 && <Guide />}
     </>
   )
 }
