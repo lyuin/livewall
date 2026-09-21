@@ -32,6 +32,9 @@ function boot(): Boot {
 // StrictMode で 2 回呼ばれ、ハッシュの消去が二重に走る。
 const BOOT = boot()
 
+// 配信名を出しておく時間。9 本ぶん読めて、かつ映像を覆い続けない程度。
+const CAPTION_VISIBLE_MS = 10_000
+
 export default function App() {
   const [videoIds, setVideoIds] = useState<string[]>(BOOT.initial.videoIds)
   const [layout, setLayout] = useState<Layout>(BOOT.initial.layout)
@@ -39,10 +42,31 @@ export default function App() {
   const [editing, setEditing] = useState(false)
   const info = useVideoInfo(videoIds)
 
+  const [captionsVisible, setCaptionsVisible] = useState(true)
+  // 表示し直した時刻。値が変わることでタイマーを張り直す。
+  // captionsVisible だけを見ていると、表示中にもう一度押しても状態が変わらず時間が延びない。
+  const [revealedAt, setRevealedAt] = useState(() => Date.now())
+
   useEffect(() => {
     save({ videoIds, layout })
   }, [videoIds, layout])
 
+  // 一定時間で消す。映像の下端を覆い続けないため。
+  useEffect(() => {
+    if (!captionsVisible) return
+
+    const timer = window.setTimeout(() => setCaptionsVisible(false), CAPTION_VISIBLE_MS)
+    return () => window.clearTimeout(timer)
+  }, [captionsVisible, revealedAt])
+
+  function revealCaptions() {
+    setCaptionsVisible(true)
+    setRevealedAt(Date.now())
+  }
+
+  // 中身が変わったときは、今それが何なのかを知りたい場面なので配信名を出し直す。
+  // 変更を起こしたイベント側でやる。effect で videoIds を監視して出し直すと
+  // 描画のたびに state を書き換える形になり、余分な再描画を招く。
   function addVideoIds(ids: string[]) {
     setVideoIds((current) => {
       // 同じ配信を 2 枠に出す意味がなく、React の key も衝突するため重複は捨てる
@@ -52,6 +76,7 @@ export default function App() {
       }
       return merged.slice(0, MAX_PLAYERS)
     })
+    revealCaptions()
   }
 
   function replaceVideoId(index: number, videoId: string) {
@@ -60,11 +85,13 @@ export default function App() {
       next[index] = videoId
       return next
     })
+    revealCaptions()
   }
 
   function removeVideoId(index: number) {
     // 詰めて持つので、後ろの枠が 1 つずつ繰り上がる
     setVideoIds((current) => current.filter((_, position) => position !== index))
+    revealCaptions()
   }
 
   function acceptShare() {
@@ -72,6 +99,7 @@ export default function App() {
     setVideoIds(pendingShare.videoIds)
     setLayout(pendingShare.layout)
     setPendingShare(null)
+    revealCaptions()
   }
 
   return (
@@ -106,8 +134,15 @@ export default function App() {
         </div>
       )}
 
-      <WorldClock />
-      <Grid videoIds={videoIds} layout={layout} info={info} showNumbers={editing} />
+      <WorldClock onReveal={revealCaptions} />
+      <Grid
+        videoIds={videoIds}
+        layout={layout}
+        info={info}
+        showNumbers={editing}
+        // 編集中は常に出す。どの枠が何かを確かめている場面なので消してはいけない。
+        showCaptions={captionsVisible || editing}
+      />
     </>
   )
 }

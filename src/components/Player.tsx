@@ -6,11 +6,19 @@ type Props = {
   number: number
   showNumber: boolean
   info: InfoResult | undefined
+  showCaption: boolean
   /** 分割数より後ろの枠。DOM からは外さず隠すだけにして、戻したときの再読み込みを避ける。 */
   hidden: boolean
 }
 
-export default function Player({ videoId, number, showNumber, info, hidden }: Props) {
+export default function Player({
+  videoId,
+  number,
+  showNumber,
+  info,
+  showCaption,
+  hidden,
+}: Props) {
   // mute=1: 自動再生をブラウザに許可させる唯一の手段
   // playsinline=1: iPad で再生時に全画面へ飛ばさない。無いとグリッドが崩れる
   const src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&playsinline=1`
@@ -30,7 +38,14 @@ export default function Player({ videoId, number, showNumber, info, hidden }: Pr
       {showNumber && <span className="cell__number">{number}</span>}
 
       {caption !== null && (
-        <div className={`cell__caption${caption.isError ? ' cell__caption--error' : ''}`}>
+        // 要素は残したまま opacity だけ落とす。出し入れで DOM を組み替えると
+        // 隣の iframe に影響が出る可能性があるため。
+        <div
+          className={
+            `cell__caption${caption.isError ? ' cell__caption--error' : ''}` +
+            `${showCaption ? '' : ' cell__caption--hidden'}`
+          }
+        >
           <span className="cell__title">{caption.title}</span>
           {caption.author !== '' && <span className="cell__author">{caption.author}</span>}
         </div>

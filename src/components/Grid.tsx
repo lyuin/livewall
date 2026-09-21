@@ -9,9 +9,10 @@ type Props = {
   info: InfoMap
   /** 編集中だけ枠に番号を出す。常時出すと映像の邪魔になる。 */
   showNumbers: boolean
+  showCaptions: boolean
 }
 
-export default function Grid({ videoIds, layout, info, showNumbers }: Props) {
+export default function Grid({ videoIds, layout, info, showNumbers, showCaptions }: Props) {
   const columns = COLUMNS[layout]
   const rows = Math.ceil(layout / columns)
 
@@ -32,6 +33,7 @@ export default function Grid({ videoIds, layout, info, showNumbers }: Props) {
           number={index + 1}
           showNumber={showNumbers}
           info={info[id]}
+          showCaption={showCaptions}
           hidden={index >= layout}
         />
       ))}

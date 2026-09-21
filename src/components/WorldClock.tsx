@@ -12,7 +12,13 @@ const DAY = '#9dc3e6'
 // 日の出・日の入りの前後にこの時間だけグラデーションをかけ、薄明を表す
 const TWILIGHT_HOURS = 0.8
 
-export default function WorldClock() {
+type Props = {
+  /** 配信名を再表示する。映像をタップするとプレイヤーが反応するため、
+      iframe の外にあるこの帯が受け皿になる。 */
+  onReveal: () => void
+}
+
+export default function WorldClock({ onReveal }: Props) {
   const [now, setNow] = useState(() => new Date())
 
   useEffect(() => {
@@ -21,11 +27,11 @@ export default function WorldClock() {
   }, [])
 
   return (
-    <div className="world">
+    <button type="button" className="world" onClick={onReveal} aria-label="配信名を表示">
       {CITIES.map((city) => (
         <CityClock key={city.timeZone} city={city} now={now} />
       ))}
-    </div>
+    </button>
   )
 }
 
