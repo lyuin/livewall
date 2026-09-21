@@ -1,15 +1,17 @@
 import { useState } from 'react'
 import type { Layout } from '../lib/layout'
+import type { InfoMap, InfoResult } from '../lib/oembed'
 import { extractVideoId, watchUrl } from '../lib/youtube'
 
 type Props = {
   layout: Layout
   videoIds: string[]
+  info: InfoMap
   onReplace: (index: number, videoId: string) => void
   onRemove: (index: number) => void
 }
 
-export default function SlotEditor({ layout, videoIds, onReplace, onRemove }: Props) {
+export default function SlotEditor({ layout, videoIds, info, onReplace, onRemove }: Props) {
   /**
    * 入力を検証して反映する。問題があればエラー文を返し、行側に表示させる。
    */
@@ -35,6 +37,7 @@ export default function SlotEditor({ layout, videoIds, onReplace, onRemove }: Pr
           key={`${index}-${videoId}`}
           number={index + 1}
           videoId={videoId}
+          info={info[videoId]}
           hidden={index >= layout}
           onSubmit={(text) => submit(index, text)}
           onRemove={() => onRemove(index)}
@@ -47,42 +50,90 @@ export default function SlotEditor({ layout, videoIds, onReplace, onRemove }: Pr
 type RowProps = {
   number: number
   videoId: string
+  info: InfoResult | undefined
   /** 現在の分割数では画面に出ていない枠 */
   hidden: boolean
   onSubmit: (text: string) => string | null
   onRemove: () => void
 }
 
-function SlotRow({ number, videoId, hidden, onSubmit, onRemove }: RowProps) {
+function SlotRow({ number, videoId, info, hidden, onSubmit, onRemove }: RowProps) {
+  // 普段はタイトルを読むだけ。URL を常に出すと読みづらく、9 行並ぶと画面が埋まる。
+  const [editing, setEditing] = useState(false)
   const [text, setText] = useState(() => watchUrl(videoId))
   const [error, setError] = useState<string | null>(null)
 
-  const changed = text.trim() !== watchUrl(videoId)
-
-  function handleSubmit() {
-    setError(onSubmit(text))
+  function apply() {
+    const message = onSubmit(text)
+    setError(message)
+    if (message === null) setEditing(false)
   }
+
+  function cancel() {
+    setText(watchUrl(videoId))
+    setError(null)
+    setEditing(false)
+  }
+
+  const label = toLabel(info, videoId)
 
   return (
     <li className="slot">
-      <span className="slot__number" aria-hidden="true">
-        {number}
-      </span>
-      <input
-        className="slot__input"
-        type="text"
-        value={text}
-        onChange={(event) => setText(event.target.value)}
-        aria-label={`${number} 番の URL`}
-      />
-      <button type="button" onClick={handleSubmit} disabled={!changed}>
-        変更
-      </button>
-      <button type="button" onClick={onRemove}>
-        削除
-      </button>
-      {hidden && <span className="note">この分割数では非表示</span>}
+      <span className="slot__number">{number}</span>
+
+      {editing ? (
+        <>
+          <input
+            className="slot__input"
+            type="text"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            aria-label={`${number} 番の URL`}
+            autoFocus
+          />
+          <button type="button" onClick={apply} disabled={text.trim() === ''}>
+            決定
+          </button>
+          <button type="button" onClick={cancel}>
+            やめる
+          </button>
+        </>
+      ) : (
+        <>
+          <span className={`slot__label${label.isError ? ' slot__label--error' : ''}`}>
+            <span className="slot__title">{label.title}</span>
+            {label.author !== '' && <span className="slot__author">{label.author}</span>}
+          </span>
+          {hidden && <span className="note">非表示</span>}
+          <button type="button" onClick={() => setEditing(true)}>
+            変更
+          </button>
+          <button type="button" className="danger" onClick={onRemove}>
+            削除
+          </button>
+        </>
+      )}
+
       {error !== null && <span className="note note--error">{error}</span>}
     </li>
   )
+}
+
+function toLabel(
+  info: InfoResult | undefined,
+  videoId: string,
+): { title: string; author: string; isError: boolean } {
+  if (info === undefined) return { title: '読み込み中', author: '', isError: false }
+
+  switch (info.status) {
+    case 'ok':
+      return { title: info.title, author: info.author, isError: false }
+    case 'missing':
+      return { title: '見つからない（削除または非公開）', author: '', isError: true }
+    case 'blocked':
+      return { title: '埋め込みが許可されていない可能性', author: '', isError: true }
+    default:
+      // 通信できなかったときはタイトルが分からないので ID を出す
+      return { title: videoId, author: '', isError: false }
+  }
 }

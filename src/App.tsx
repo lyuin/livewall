@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { useVideoInfo } from './hooks/useVideoInfo'
 import Grid from './components/Grid'
 import Toolbar from './components/Toolbar'
 import WorldClock from './components/WorldClock'
@@ -36,6 +37,7 @@ export default function App() {
   const [layout, setLayout] = useState<Layout>(BOOT.initial.layout)
   const [pendingShare, setPendingShare] = useState<SharedSet | null>(BOOT.pendingShare)
   const [editing, setEditing] = useState(false)
+  const info = useVideoInfo(videoIds)
 
   useEffect(() => {
     save({ videoIds, layout })
@@ -77,6 +79,7 @@ export default function App() {
       <Toolbar
         layout={layout}
         videoIds={videoIds}
+        info={info}
         editing={editing}
         onEditingChange={setEditing}
         onLayoutChange={setLayout}
@@ -104,7 +107,7 @@ export default function App() {
       )}
 
       <WorldClock />
-      <Grid videoIds={videoIds} layout={layout} showNumbers={editing} />
+      <Grid videoIds={videoIds} layout={layout} info={info} showNumbers={editing} />
     </>
   )
 }

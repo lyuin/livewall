@@ -1,15 +1,17 @@
 import type { CSSProperties } from 'react'
 import Player from './Player'
 import { COLUMNS, type Layout } from '../lib/layout'
+import type { InfoMap } from '../lib/oembed'
 
 type Props = {
   videoIds: string[]
   layout: Layout
+  info: InfoMap
   /** 編集中だけ枠に番号を出す。常時出すと映像の邪魔になる。 */
   showNumbers: boolean
 }
 
-export default function Grid({ videoIds, layout, showNumbers }: Props) {
+export default function Grid({ videoIds, layout, info, showNumbers }: Props) {
   const columns = COLUMNS[layout]
   const rows = Math.ceil(layout / columns)
 
@@ -29,6 +31,7 @@ export default function Grid({ videoIds, layout, showNumbers }: Props) {
           videoId={id}
           number={index + 1}
           showNumber={showNumbers}
+          info={info[id]}
           hidden={index >= layout}
         />
       ))}

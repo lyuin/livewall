@@ -1,12 +1,14 @@
 import { useState } from 'react'
 import SlotEditor from './SlotEditor'
 import { LAYOUTS, MAX_PLAYERS, type Layout } from '../lib/layout'
+import type { InfoMap } from '../lib/oembed'
 import { buildShareLink } from '../lib/share'
 import { extractVideoIds } from '../lib/youtube'
 
 type Props = {
   layout: Layout
   videoIds: string[]
+  info: InfoMap
   /** 編集パネルの開閉。グリッド側の番号表示と連動させるため App が持つ。 */
   editing: boolean
   onEditingChange: (editing: boolean) => void
@@ -22,6 +24,7 @@ type CopyState = 'idle' | 'copied' | 'failed'
 export default function Toolbar({
   layout,
   videoIds,
+  info,
   editing,
   onEditingChange,
   onLayoutChange,
@@ -120,6 +123,7 @@ export default function Toolbar({
             <SlotEditor
               layout={layout}
               videoIds={videoIds}
+              info={info}
               onReplace={onReplace}
               onRemove={onRemove}
             />

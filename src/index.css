@@ -220,6 +220,39 @@ textarea {
   min-width: 0;
 }
 
+/* 普段はタイトルを読むだけの行 */
+.slot__label {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.slot__title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.slot__author {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+}
+
+.slot__label--error .slot__title {
+  color: var(--danger);
+}
+
 .slot button {
   flex: 0 0 auto;
   padding: 0 12px;
@@ -381,6 +414,47 @@ textarea {
   text-align: center;
   /* 映像の上に出るだけで、クリックは下の iframe に通したい */
   pointer-events: none;
+}
+
+/* 枠の下端に出す配信タイトル。9 本並べると映像だけでは判別できないため常時出す。 */
+.cell__caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 16px 8px 6px;
+  /* 明るい映像の上でも読めるよう、下端だけ暗く落とす */
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+  font-size: 11px;
+  line-height: 1.3;
+  /* 映像の上に出るだけで、クリックは下の iframe に通したい */
+  pointer-events: none;
+}
+
+.cell__title {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.cell__author {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  letter-spacing: 0.04em;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.cell__caption--error .cell__title {
+  color: var(--danger);
 }
 
 /* hidden 属性は display 指定に負けるので明示的に打ち消す */
