@@ -1,6 +1,14 @@
 import { describe, expect, it } from 'vitest'
 import { CITIES } from './cities'
-import { cityTime, formatClock, formatCountdown, nextSunEvent } from './sun'
+import {
+  cityTime,
+  formatClock,
+  formatDate,
+  formatDuration,
+  formatShortDate,
+  nextSunEvent,
+  sameDate,
+} from './sun'
 
 function city(label: string) {
   const found = CITIES.find((candidate) => candidate.label === label)
@@ -128,11 +136,78 @@ describe('nextSunEvent', () => {
   })
 })
 
-describe('formatCountdown', () => {
-  it('残り時間は h:mm で、時は 0 詰めしない', () => {
-    expect(formatCountdown(0)).toBe('0:00')
-    expect(formatCountdown(24)).toBe('0:24')
-    expect(formatCountdown(95)).toBe('1:35')
-    expect(formatCountdown(725)).toBe('12:05')
+describe('formatDuration', () => {
+  it('時刻と見間違えないよう単位を付ける', () => {
+    expect(formatDuration(0)).toBe('0m')
+    expect(formatDuration(59)).toBe('59m')
+    expect(formatDuration(60)).toBe('1h 0m')
+    expect(formatDuration(95)).toBe('1h 35m')
+    expect(formatDuration(725)).toBe('12h 5m')
+  })
+})
+
+describe('現地の暦日', () => {
+  // 日付ずれの表示はここが正しいことに全面的に依存する。
+  // ブラウザ標準の変換と突き合わせて確かめる。
+  it.each([
+    // この瞬間、ロサンゼルスは前日になっている
+    ['2026-09-21T04:38:00Z', 'LOS ANGELES'],
+    ['2026-09-21T04:38:00Z', 'TOKYO'],
+    ['2026-09-21T04:38:00Z', 'NEW YORK'],
+    // 日付が変わる境目
+    ['2026-09-21T14:59:00Z', 'TOKYO'],
+    ['2026-09-21T15:01:00Z', 'TOKYO'],
+    // 年をまたぐ
+    ['2026-12-31T16:00:00Z', 'SYDNEY'],
+    ['2027-01-01T04:00:00Z', 'LOS ANGELES'],
+  ])('%s の %s は Intl と一致する', (iso, label) => {
+    const target = city(label)
+    const at = new Date(iso)
+
+    const mine = formatDate(
+      cityTime(target.latitude, target.longitude, target.timeZone, at).date,
+    )
+    const reference = new Intl.DateTimeFormat('en-CA', {
+      timeZone: target.timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    })
+      .format(at)
+      // en-CA は 2026-09-21 を返すので区切りだけ合わせる
+      .replace(/-/g, '/')
+
+    expect(mine).toBe(reference)
+  })
+
+  it('東京が翌日でもロサンゼルスは前日として扱われる', () => {
+    const at = new Date('2026-09-21T04:38:00Z')
+    const tokyo = city('TOKYO')
+    const la = city('LOS ANGELES')
+
+    const tokyoDate = cityTime(tokyo.latitude, tokyo.longitude, tokyo.timeZone, at).date
+    const laDate = cityTime(la.latitude, la.longitude, la.timeZone, at).date
+
+    expect(sameDate(tokyoDate, laDate)).toBe(false)
+    expect(formatShortDate(tokyoDate)).toBe('09/21')
+    expect(formatShortDate(laDate)).toBe('09/20')
+  })
+})
+
+describe('日付の表記', () => {
+  it('年から書き、月日は 0 詰めする', () => {
+    expect(formatDate({ year: 2026, month: 9, day: 1 })).toBe('2026/09/01')
+    expect(formatDate({ year: 2026, month: 12, day: 24 })).toBe('2026/12/24')
+  })
+
+  it('短い形は年を省く', () => {
+    expect(formatShortDate({ year: 2026, month: 9, day: 1 })).toBe('09/01')
+  })
+
+  it('同じ日かどうかを年月日で比べる', () => {
+    expect(sameDate({ year: 2026, month: 9, day: 21 }, { year: 2026, month: 9, day: 21 })).toBe(true)
+    expect(sameDate({ year: 2026, month: 9, day: 21 }, { year: 2027, month: 9, day: 21 })).toBe(
+      false,
+    )
   })
 })

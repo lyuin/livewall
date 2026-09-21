@@ -391,6 +391,14 @@ textarea {
   color: #5f6570;
 }
 
+/* 端末と日付が違う都市にだけ添える。都市名より弱くして、付加情報だと分かるようにする。 */
+.city__date {
+  margin-left: 5px;
+  letter-spacing: 0.06em;
+  font-variant-numeric: tabular-nums;
+  color: #494e57;
+}
+
 .city__time {
   margin-top: 2px;
   font-size: 21px;

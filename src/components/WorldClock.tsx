@@ -3,8 +3,13 @@ import { CITIES, type City } from '../lib/cities'
 import {
   cityTime,
   formatClock,
-  formatCountdown,
+  formatDate,
+  formatDuration,
+  formatShortDate,
+  localDate,
   nextSunEvent,
+  sameDate,
+  type CalendarDate,
   type CityTime,
 } from '../lib/sun'
 
@@ -18,16 +23,7 @@ const DAY = '#9dc3e6'
 // 日の出・日の入りの前後にこの時間だけグラデーションをかけ、薄明を表す
 const TWILIGHT_HOURS = 0.8
 
-// 端に出す日付。曜日を入れるのは、都市ごとに日付が 1 日ずれることを読み取れるようにするため。
-// 3 つに分けているのは、並び順を自分で決めるためと、9 月だけ 4 文字（Sept）になる
-// ロケールを避けて月名の幅を揃えるため。
 const WEEKDAY_FORMAT = new Intl.DateTimeFormat('en-US', { weekday: 'short' })
-const DAY_FORMAT = new Intl.DateTimeFormat('en-US', { day: '2-digit' })
-const MONTH_FORMAT = new Intl.DateTimeFormat('en-US', { month: 'short' })
-
-function formatDate(at: Date): string {
-  return `${WEEKDAY_FORMAT.format(at)} ${DAY_FORMAT.format(at)} ${MONTH_FORMAT.format(at)}`
-}
 
 type Props = {
   /** 配信名を再表示する。映像をタップするとプレイヤーが反応するため、
@@ -43,53 +39,72 @@ export default function WorldClock({ onReveal }: Props) {
     return () => window.clearInterval(timer)
   }, [])
 
+  const today = localDate(now)
   const next = nextSunEvent(CITIES, now)
 
   return (
     <button type="button" className="world" onClick={onReveal} aria-label="Show stream names">
       <div className="edge">
-        <div className="edge__label">Today</div>
-        <div className="edge__value">{formatDate(now)}</div>
+        {/* 端末の日付であることを明示する。都市ごとの日付ずれはこれを基準に測る。 */}
+        <div className="edge__label">Local</div>
+        <div className="edge__value">
+          {formatDate(today)} {WEEKDAY_FORMAT.format(now)}
+        </div>
       </div>
 
       <div className="cities">
         {CITIES.map((city) => (
-          <CityClock key={city.timeZone} city={city} now={now} />
+          <CityClock key={city.timeZone} city={city} now={now} today={today} />
         ))}
       </div>
 
       <div className="edge edge--right">
-        <div className="edge__label">Next</div>
         {next === null ? (
-          <div className="edge__value">—</div>
+          <>
+            <div className="edge__label">Next</div>
+            <div className="edge__value">—</div>
+          </>
         ) : (
-          <div
-            className="edge__value"
-            aria-label={`${next.city.name} ${next.kind} in ${formatCountdown(next.minutesUntil)}`}
-          >
-            {next.city.label}{' '}
-            {/* 上向きが日の出、下向きが日の入り。意味は読み上げ用の文で補う。 */}
-            <span aria-hidden="true">{next.kind === 'sunrise' ? '↑' : '↓'}</span>{' '}
-            {formatCountdown(next.minutesUntil)}
-          </div>
+          <>
+            {/* 見出しに出来事を入れ、値に in を入れる。矢印だけでは何の残り時間か読めなかった。 */}
+            <div className="edge__label">Next {next.kind}</div>
+            <div className="edge__value">
+              {next.city.label} in {formatDuration(next.minutesUntil)}
+            </div>
+          </>
         )}
       </div>
     </button>
   )
 }
 
-function CityClock({ city, now }: { city: City; now: Date }) {
+type CityProps = {
+  city: City
+  now: Date
+  today: CalendarDate
+}
+
+function CityClock({ city, now, today }: CityProps) {
   const time = cityTime(city.latitude, city.longitude, city.timeZone, now)
   const clock = formatClock(time.hours)
 
+  // 日付が違う都市にだけ日付を添える。曜日の略称（SUN など）は、このアプリが
+  // 日の出・日の入りを扱うため「日曜」か「太陽」か読み分けられないので使わない。
+  const shifted = !sameDate(time.date, today)
+
   return (
     <div className={`city ${time.isDay ? 'city--day' : 'city--night'}`}>
-      <div className="city__name">{city.label}</div>
+      <div className="city__name">
+        {city.label}
+        {shifted && <span className="city__date">· {formatShortDate(time.date)}</span>}
+      </div>
 
       {/* 昼夜を色だけに担わせないよう、読み上げ用の文にも入れる */}
       <div
         className="city__time"
-        aria-label={`${city.name} ${clock} ${time.isDay ? 'day' : 'night'}`}
+        aria-label={`${city.name} ${clock} ${time.isDay ? 'day' : 'night'}${
+          shifted ? ` on ${formatDate(time.date)}` : ''
+        }`}
       >
         {clock}
       </div>

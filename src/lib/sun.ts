@@ -24,9 +24,17 @@ export type SunEvent = {
   minutesUntil: number
 }
 
+export type CalendarDate = {
+  year: number
+  month: number
+  day: number
+}
+
 export type CityTime = {
   /** 現地時刻。0 以上 24 未満の小数時間 */
   hours: number
+  /** 現地の暦日。端末の日付と比べて、日付がずれている都市を見つけるのに使う。 */
+  date: CalendarDate
   /** 現地の日の出。極夜・白夜では null */
   sunrise: number | null
   /** 現地の日の入り。極夜・白夜では null */
@@ -41,10 +49,46 @@ export function cityTime(
   at: Date,
 ): CityTime {
   const offset = offsetMinutes(timeZone, at)
-  const hours = toLocalHours(at.getTime(), offset)
+
+  // ずらした瞬間を UTC として読むことで、現地の時計と暦を同時に得る
+  const local = new Date(at.getTime() + offset * 60_000)
+  const hours =
+    local.getUTCHours() + local.getUTCMinutes() / 60 + local.getUTCSeconds() / 3600
+  const date: CalendarDate = {
+    year: local.getUTCFullYear(),
+    month: local.getUTCMonth() + 1,
+    day: local.getUTCDate(),
+  }
+
   const { sunrise, sunset } = sunTimes(latitude, longitude, at, offset)
 
-  return { hours, sunrise, sunset, isDay: isDaylight(hours, sunrise, sunset) }
+  return { hours, date, sunrise, sunset, isDay: isDaylight(hours, sunrise, sunset) }
+}
+
+/** 端末の暦日。都市ごとの日付ずれを測る基準になる。 */
+export function localDate(at: Date): CalendarDate {
+  return { year: at.getFullYear(), month: at.getMonth() + 1, day: at.getDate() }
+}
+
+export function sameDate(a: CalendarDate, b: CalendarDate): boolean {
+  return a.year === b.year && a.month === b.month && a.day === b.day
+}
+
+/**
+ * 年から書く。月日が先に来る形式は国によって順序が逆になり同じ文字列が別の日を指すが、
+ * 年が先なら誤読の余地がない。
+ */
+export function formatDate({ year, month, day }: CalendarDate): string {
+  return `${year}/${pad(month)}/${pad(day)}`
+}
+
+/** 基準の日付が別に出ているときは、年を省いても読める。 */
+export function formatShortDate({ month, day }: CalendarDate): string {
+  return `${pad(month)}/${pad(day)}`
+}
+
+function pad(value: number): string {
+  return String(value).padStart(2, '0')
 }
 
 /**
@@ -196,9 +240,12 @@ export function formatClock(hours: number): string {
   return `${String(whole).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`
 }
 
-/** 残り時間を h:mm で表す。時刻ではなく長さなので時は 0 詰めしない。 */
-export function formatCountdown(totalMinutes: number): string {
+/**
+ * 残り時間を表す。時刻と見間違えないよう、区切り記号ではなく単位を付ける。
+ * 1:06 だと「1 時 6 分」に読めてしまう。
+ */
+export function formatDuration(totalMinutes: number): string {
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
-  return `${hours}:${String(minutes).padStart(2, '0')}`
+  return hours === 0 ? `${minutes}m` : `${hours}h ${minutes}m`
 }
