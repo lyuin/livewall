@@ -26,11 +26,13 @@ export const CITIES: City[] = [
     longitude: -74.01,
   },
   {
-    label: 'LONDON',
-    name: 'London',
-    timeZone: 'Europe/London',
-    latitude: 51.51,
-    longitude: -0.13,
+    // ロンドン（経度 -0.13）とはわずか 2.5 度差で、24 時間の帯の上では同じ位置。
+    // 差し替えてもヨーロッパの枠としての釣り合いは変わらない。
+    label: 'PARIS',
+    name: 'Paris',
+    timeZone: 'Europe/Paris',
+    latitude: 48.86,
+    longitude: 2.35,
   },
   {
     label: 'DUBAI',
@@ -38,6 +40,16 @@ export const CITIES: City[] = [
     timeZone: 'Asia/Dubai',
     latitude: 25.2,
     longitude: 55.27,
+  },
+  {
+    // ドバイ（55 度）と東京（140 度）の 85 度の隙間を埋める。
+    // 赤道直下なので昼の長さが年間ほぼ 12 時間で変わらず、季節で大きく揺れる
+    // パリと並ぶと帯の形の違いがそのまま緯度の違いになる。
+    label: 'SINGAPORE',
+    name: 'Singapore',
+    timeZone: 'Asia/Singapore',
+    latitude: 1.35,
+    longitude: 103.82,
   },
   {
     label: 'TOKYO',

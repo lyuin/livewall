@@ -372,7 +372,9 @@ button.is-pending::after {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 26px;
+  /* 7 都市は iPad 横向きの幅にかなり近い。日付ずれの印が複数出たときに
+     はみ出さないよう、間隔を詰めてある。 */
+  gap: 20px;
   min-width: 0;
 }
 
@@ -589,6 +591,23 @@ button.is-pending::after {
   border: 1px solid rgba(255, 255, 255, 0.05);
   align-items: center;
   justify-content: center;
+}
+
+/* 止めている枠。何が入っているかは分かるようにしておく。 */
+.cell--stopped {
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.cell__stopped {
+  max-width: 100%;
+  padding: 0 12px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.45);
 }
 
 .cell iframe {
