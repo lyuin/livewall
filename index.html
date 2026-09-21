@@ -4,6 +4,18 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>livewall</title>
+
+    <!-- パスは相対。index.html 自体が /livewall/ 配下で配信されるので、
+         base の値をここに書き写さずに済む。 -->
+    <link rel="manifest" href="manifest.json" />
+    <link rel="icon" href="icon-192.png" />
+    <!-- iPad のホーム画面が使うのはこれ。manifest の icons は見ない。 -->
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+
+    <meta name="theme-color" content="#000000" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-mobile-web-app-title" content="livewall" />
   </head>
   <body>
     <div id="root"></div>
