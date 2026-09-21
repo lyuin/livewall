@@ -45,6 +45,14 @@ export function extractVideoId(input: string): string | null {
 }
 
 /**
+ * 動画 ID から視聴用の URL を組み立てる。
+ * 貼られた元の URL は保存していないので、編集画面に出すぶんはここで復元する。
+ */
+export function watchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`
+}
+
+/**
  * 改行区切りのテキストをまとめて解析する。9 本の URL を毎回 1 本ずつ貼るのが辛いため。
  * 解析できなかった行は invalid に入れて、どれが弾かれたか分かるようにする。
  */

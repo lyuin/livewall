@@ -34,6 +34,7 @@ export default function App() {
   const [videoIds, setVideoIds] = useState<string[]>(BOOT.initial.videoIds)
   const [layout, setLayout] = useState<Layout>(BOOT.initial.layout)
   const [pendingShare, setPendingShare] = useState<SharedSet | null>(BOOT.pendingShare)
+  const [editing, setEditing] = useState(false)
 
   useEffect(() => {
     save({ videoIds, layout })
@@ -50,6 +51,19 @@ export default function App() {
     })
   }
 
+  function replaceVideoId(index: number, videoId: string) {
+    setVideoIds((current) => {
+      const next = [...current]
+      next[index] = videoId
+      return next
+    })
+  }
+
+  function removeVideoId(index: number) {
+    // 詰めて持つので、後ろの枠が 1 つずつ繰り上がる
+    setVideoIds((current) => current.filter((_, position) => position !== index))
+  }
+
   function acceptShare() {
     if (pendingShare === null) return
     setVideoIds(pendingShare.videoIds)
@@ -62,8 +76,12 @@ export default function App() {
       <Toolbar
         layout={layout}
         videoIds={videoIds}
+        editing={editing}
+        onEditingChange={setEditing}
         onLayoutChange={setLayout}
         onAdd={addVideoIds}
+        onReplace={replaceVideoId}
+        onRemove={removeVideoId}
         onClear={() => setVideoIds([])}
       />
 
@@ -84,7 +102,7 @@ export default function App() {
         </div>
       )}
 
-      <Grid videoIds={videoIds} layout={layout} />
+      <Grid videoIds={videoIds} layout={layout} showNumbers={editing} />
     </>
   )
 }

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import SlotEditor from './SlotEditor'
 import { LAYOUTS, MAX_PLAYERS, type Layout } from '../lib/layout'
 import { buildShareLink } from '../lib/share'
 import { extractVideoIds } from '../lib/youtube'
@@ -6,15 +7,29 @@ import { extractVideoIds } from '../lib/youtube'
 type Props = {
   layout: Layout
   videoIds: string[]
+  /** 編集パネルの開閉。グリッド側の番号表示と連動させるため App が持つ。 */
+  editing: boolean
+  onEditingChange: (editing: boolean) => void
   onLayoutChange: (layout: Layout) => void
   onAdd: (ids: string[]) => void
+  onReplace: (index: number, videoId: string) => void
+  onRemove: (index: number) => void
   onClear: () => void
 }
 
 type CopyState = 'idle' | 'copied' | 'failed'
 
-export default function Toolbar({ layout, videoIds, onLayoutChange, onAdd, onClear }: Props) {
-  const [open, setOpen] = useState(false)
+export default function Toolbar({
+  layout,
+  videoIds,
+  editing,
+  onEditingChange,
+  onLayoutChange,
+  onAdd,
+  onReplace,
+  onRemove,
+  onClear,
+}: Props) {
   const [text, setText] = useState('')
   const [invalid, setInvalid] = useState<string[]>([])
   const [copyState, setCopyState] = useState<CopyState>('idle')
@@ -30,9 +45,6 @@ export default function Toolbar({ layout, videoIds, onLayoutChange, onAdd, onCle
     if (result.ids.length === 0) return
     onAdd(result.ids)
     setText('')
-
-    // 弾かれた行が残っているときは、何が失敗したか読めるようパネルを開いたままにする
-    if (result.invalid.length === 0) setOpen(false)
   }
 
   function handleClear() {
@@ -73,8 +85,8 @@ export default function Toolbar({ layout, videoIds, onLayoutChange, onAdd, onCle
           {count} / {MAX_PLAYERS} 本
         </span>
 
-        <button type="button" aria-expanded={open} onClick={() => setOpen(!open)}>
-          {open ? '閉じる' : 'ライブ動画を追加'}
+        <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
+          {editing ? '閉じる' : count === 0 ? 'ライブ動画を追加' : 'ライブ動画を変更'}
         </button>
         <button type="button" onClick={handleCopyLink} disabled={count === 0}>
           {copyState === 'copied' ? 'コピーした' : '設定リンクをコピー'}
@@ -98,24 +110,40 @@ export default function Toolbar({ layout, videoIds, onLayoutChange, onAdd, onCle
         </div>
       )}
 
-      {open && (
+      {editing && (
         // グリッドの上にかぶせる。ツールバー内に置くとグリッドの高さが変わり、
         // 開閉のたびに再生中の iframe がリサイズされてしまう。
         <div className="panel">
-          <textarea
-            value={text}
-            onChange={(event) => setText(event.target.value)}
-            aria-label="YouTube の URL"
-            placeholder="YouTube ライブの URL を貼る（1 行に 1 つ。まとめて貼れる）"
-            rows={5}
-            autoFocus
-          />
-          <div className="panel__actions">
-            <button type="button" onClick={handleAdd} disabled={text.trim() === '' || full}>
-              追加
-            </button>
-            {full && <span className="note">上限 {MAX_PLAYERS} 本に達している</span>}
-          </div>
+          {count > 0 && (
+            <SlotEditor
+              layout={layout}
+              videoIds={videoIds}
+              onReplace={onReplace}
+              onRemove={onRemove}
+            />
+          )}
+
+          {full ? (
+            <p className="note">
+              上限 {MAX_PLAYERS} 本。入れ替えるには番号の行の URL を書き換えて変更する。
+            </p>
+          ) : (
+            <>
+              <textarea
+                value={text}
+                onChange={(event) => setText(event.target.value)}
+                aria-label="追加する YouTube の URL"
+                placeholder="空いている枠に追加する URL（1 行に 1 つ。まとめて貼れる）"
+                rows={3}
+              />
+              <div className="panel__actions">
+                <button type="button" onClick={handleAdd} disabled={text.trim() === ''}>
+                  追加
+                </button>
+              </div>
+            </>
+          )}
+
           {invalid.length > 0 && (
             <p className="note note--error">
               {invalid.length} 行は YouTube の URL として読めなかった: {invalid.join(' / ')}

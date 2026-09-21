@@ -133,6 +133,65 @@ body {
   font: inherit;
 }
 
+/* ---- 枠ごとの編集 ---- */
+
+.slots {
+  margin: 0 0 8px;
+  padding: 0;
+  list-style: none;
+}
+
+.slot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+}
+
+.slot__number {
+  flex: 0 0 auto;
+  min-width: 24px;
+  padding: 2px 0;
+  border-radius: 4px;
+  background: #333;
+  font-weight: 700;
+  text-align: center;
+}
+
+.slot__input {
+  /* 長い URL でも行を崩さない。縮んでよい要素はこれだけ。 */
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #000;
+  color: #fff;
+  font: inherit;
+}
+
+.slot button {
+  flex: 0 0 auto;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #1c1c1c;
+  color: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+
+.slot button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.slot .note {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
 /* ---- 共有リンクの取り込み確認 ---- */
 
 .banner {
@@ -200,8 +259,26 @@ body {
 
 .cell {
   display: flex;
+  /* 番号バッジを枠の隅に置くための基準 */
+  position: relative;
   overflow: hidden;
   background: #0a0a0a;
+}
+
+.cell__number {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  min-width: 24px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  color: #fff;
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  /* 映像の上に出るだけで、クリックは下の iframe に通したい */
+  pointer-events: none;
 }
 
 /* hidden 属性は display 指定に負けるので明示的に打ち消す */
