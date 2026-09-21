@@ -32,8 +32,8 @@ function boot(): Boot {
 // StrictMode で 2 回呼ばれ、ハッシュの消去が二重に走る。
 const BOOT = boot()
 
-// 配信名を出しておく時間。9 本ぶん読み終えるには 10 秒では足りなかった。
-const CAPTION_VISIBLE_MS = 20_000
+// ツールバーと配信名を出しておく時間。9 本ぶん読み終えるには 10 秒では足りなかった。
+const CHROME_VISIBLE_MS = 20_000
 
 export default function App() {
   const [videoIds, setVideoIds] = useState<string[]>(BOOT.initial.videoIds)
@@ -42,25 +42,26 @@ export default function App() {
   const [editing, setEditing] = useState(false)
   const info = useVideoInfo(videoIds)
 
-  const [captionsVisible, setCaptionsVisible] = useState(true)
+  // ツールバーと配信名の表示。時計の帯だけは常に出しておき、再表示の受け皿にする。
+  const [chromeVisible, setChromeVisible] = useState(true)
   // 表示し直した時刻。値が変わることでタイマーを張り直す。
-  // captionsVisible だけを見ていると、表示中にもう一度押しても状態が変わらず時間が延びない。
+  // chromeVisible だけを見ていると、表示中にもう一度押しても状態が変わらず時間が延びない。
   const [revealedAt, setRevealedAt] = useState(() => Date.now())
 
   useEffect(() => {
     save({ videoIds, layout })
   }, [videoIds, layout])
 
-  // 一定時間で消す。映像の下端を覆い続けないため。
+  // 一定時間で消す。映像を覆い続けないため。
   useEffect(() => {
-    if (!captionsVisible) return
+    if (!chromeVisible) return
 
-    const timer = window.setTimeout(() => setCaptionsVisible(false), CAPTION_VISIBLE_MS)
+    const timer = window.setTimeout(() => setChromeVisible(false), CHROME_VISIBLE_MS)
     return () => window.clearTimeout(timer)
-  }, [captionsVisible, revealedAt])
+  }, [chromeVisible, revealedAt])
 
-  function revealCaptions() {
-    setCaptionsVisible(true)
+  function revealChrome() {
+    setChromeVisible(true)
     setRevealedAt(Date.now())
   }
 
@@ -76,7 +77,7 @@ export default function App() {
       }
       return merged.slice(0, MAX_PLAYERS)
     })
-    revealCaptions()
+    revealChrome()
   }
 
   function replaceVideoId(index: number, videoId: string) {
@@ -85,13 +86,13 @@ export default function App() {
       next[index] = videoId
       return next
     })
-    revealCaptions()
+    revealChrome()
   }
 
   function removeVideoId(index: number) {
     // 詰めて持つので、後ろの枠が 1 つずつ繰り上がる
     setVideoIds((current) => current.filter((_, position) => position !== index))
-    revealCaptions()
+    revealChrome()
   }
 
   function acceptShare() {
@@ -99,7 +100,7 @@ export default function App() {
     setVideoIds(pendingShare.videoIds)
     setLayout(pendingShare.layout)
     setPendingShare(null)
-    revealCaptions()
+    revealChrome()
   }
 
   return (
@@ -108,6 +109,8 @@ export default function App() {
         layout={layout}
         videoIds={videoIds}
         info={info}
+        visible={chromeVisible || editing}
+        onInteract={revealChrome}
         editing={editing}
         onEditingChange={setEditing}
         onLayoutChange={setLayout}
@@ -134,14 +137,14 @@ export default function App() {
         </div>
       )}
 
-      <WorldClock onReveal={revealCaptions} />
+      <WorldClock onReveal={revealChrome} />
       <Grid
         videoIds={videoIds}
         layout={layout}
         info={info}
         showNumbers={editing}
         // 編集中は常に出す。どの枠が何かを確かめている場面なので消してはいけない。
-        showCaptions={captionsVisible || editing}
+        showCaptions={chromeVisible || editing}
       />
     </>
   )

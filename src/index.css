@@ -116,11 +116,25 @@ textarea {
   gap: 8px;
   padding: 0 12px;
   /* 背景を敷かない。時計の帯と地続きにして上部を一続きの黒に見せる。 */
+  transition:
+    opacity 500ms ease,
+    visibility 500ms ease;
 }
 
 .actions {
   display: flex;
   gap: 6px;
+  /* 分割数の切り替えを左端に、操作を右端に寄せる */
+  margin-left: auto;
+}
+
+/* 操作しないと消える。高さは確保したまま透明にする。
+   高さを詰めるとグリッドが再計算され、映像の大きさが動いてしまう。 */
+.toolbar--hidden {
+  opacity: 0;
+  /* 見えない状態でキーボードのタブ移動が入らないようにする */
+  visibility: hidden;
+  pointer-events: none;
 }
 
 /* 分割数の切り替え。1 つの土台に 2 つ並べ、選択中だけ面を持たせる。 */
@@ -146,16 +160,6 @@ textarea {
 .layouts button[aria-pressed='true'] {
   background: var(--surface-raised);
   color: #fff;
-}
-
-.count {
-  /* 左のボタン群と右のボタン群を引き離す */
-  margin-right: auto;
-  /* 都市名と同じ扱いにして、情報の序列を揃える */
-  font-size: 11px;
-  letter-spacing: 0.1em;
-  color: var(--text-dim);
-  font-variant-numeric: tabular-nums;
 }
 
 /* ---- かぶせて出すパネル ---- */

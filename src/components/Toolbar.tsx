@@ -9,6 +9,10 @@ type Props = {
   layout: Layout
   videoIds: string[]
   info: InfoMap
+  /** 操作しないと消える。時計の帯をタップすると戻る。 */
+  visible: boolean
+  /** ツールバーを触っている間は消さないよう、タイマーを張り直させる。 */
+  onInteract: () => void
   /** 編集パネルの開閉。グリッド側の番号表示と連動させるため App が持つ。 */
   editing: boolean
   onEditingChange: (editing: boolean) => void
@@ -25,6 +29,8 @@ export default function Toolbar({
   layout,
   videoIds,
   info,
+  visible,
+  onInteract,
   editing,
   onEditingChange,
   onLayoutChange,
@@ -70,7 +76,8 @@ export default function Toolbar({
 
   return (
     <>
-      <div className="toolbar">
+      {/* onClick は中のボタンから上がってくる。操作中に消えないようタイマーを延ばす。 */}
+      <div className={`toolbar${visible ? '' : ' toolbar--hidden'}`} onClick={onInteract}>
         <div className="layouts" role="group" aria-label="Grid layout">
           {LAYOUTS.map((value) => (
             <button
@@ -83,10 +90,6 @@ export default function Toolbar({
             </button>
           ))}
         </div>
-
-        <span className="count">
-          {count} / {MAX_PLAYERS}
-        </span>
 
         <div className="actions">
           <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
