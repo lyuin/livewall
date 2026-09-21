@@ -18,6 +18,8 @@ type Props = {
   /** セットを変えたがリンクを控えていない状態。タブを閉じると変更を失う。 */
   unsaved: boolean
   onSaved: () => void
+  playing: boolean
+  onPlayingChange: (playing: boolean) => void
   /** 編集パネルの開閉。グリッド側の番号表示と連動させるため App が持つ。 */
   editing: boolean
   onEditingChange: (editing: boolean) => void
@@ -25,6 +27,7 @@ type Props = {
   onAdd: (ids: string[]) => void
   onReplace: (index: number, videoId: string) => void
   onRemove: (index: number) => void
+  onReload: (videoId: string) => void
   onClear: () => void
 }
 
@@ -43,9 +46,12 @@ export default function Toolbar({
   onAdd,
   onReplace,
   onRemove,
+  onReload,
   onClear,
   unsaved,
   onSaved,
+  playing,
+  onPlayingChange,
 }: Props) {
   const [text, setText] = useState('')
   const [invalid, setInvalid] = useState<string[]>([])
@@ -117,6 +123,13 @@ export default function Toolbar({
           </div>
 
           <div className="actions">
+            <button
+              type="button"
+              onClick={() => onPlayingChange(!playing)}
+              disabled={count === 0}
+            >
+              {playing ? 'Stop all' : 'Play all'}
+            </button>
             <button type="button" aria-expanded={editing} onClick={() => onEditingChange(!editing)}>
               {editing ? 'Done' : count === 0 ? 'Add streams' : 'Edit streams'}
             </button>
@@ -183,6 +196,7 @@ export default function Toolbar({
               info={info}
               onReplace={onReplace}
               onRemove={onRemove}
+              onReload={onReload}
             />
           )}
 

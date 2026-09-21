@@ -9,9 +9,17 @@ type Props = {
   info: InfoMap
   onReplace: (index: number, videoId: string) => void
   onRemove: (index: number) => void
+  onReload: (videoId: string) => void
 }
 
-export default function SlotEditor({ layout, videoIds, info, onReplace, onRemove }: Props) {
+export default function SlotEditor({
+  layout,
+  videoIds,
+  info,
+  onReplace,
+  onRemove,
+  onReload,
+}: Props) {
   /**
    * 入力を検証して反映する。問題があればエラー文を返し、行側に表示させる。
    */
@@ -41,6 +49,7 @@ export default function SlotEditor({ layout, videoIds, info, onReplace, onRemove
           hidden={index >= layout}
           onSubmit={(text) => submit(index, text)}
           onRemove={() => onRemove(index)}
+          onReload={() => onReload(videoId)}
         />
       ))}
     </ul>
@@ -55,9 +64,10 @@ type RowProps = {
   hidden: boolean
   onSubmit: (text: string) => string | null
   onRemove: () => void
+  onReload: () => void
 }
 
-function SlotRow({ number, videoId, info, hidden, onSubmit, onRemove }: RowProps) {
+function SlotRow({ number, videoId, info, hidden, onSubmit, onRemove, onReload }: RowProps) {
   // 普段はタイトルを読むだけ。URL を常に出すと読みづらく、9 行並ぶと画面が埋まる。
   const [editing, setEditing] = useState(false)
   const [text, setText] = useState(() => watchUrl(videoId))
@@ -105,6 +115,11 @@ function SlotRow({ number, videoId, info, hidden, onSubmit, onRemove }: RowProps
             {label.author !== '' && <span className="slot__author">{label.author}</span>}
           </span>
           {hidden && <span className="note">Hidden</span>}
+          {/* 配信が落ちたときに URL を貼り直さず戻せるようにする。
+              この枠の iframe だけを作り直すので、他の枠は止まらない。 */}
+          <button type="button" onClick={onReload}>
+            Reload
+          </button>
           <button type="button" onClick={() => setEditing(true)}>
             Replace
           </button>

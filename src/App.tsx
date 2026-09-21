@@ -28,7 +28,16 @@ export default function App() {
   const [videoIds, setVideoIds] = useState<string[]>(BOOT.videoIds)
   const [layout, setLayout] = useState<Layout>(BOOT.layout)
   const [editing, setEditing] = useState(false)
-  const info = useVideoInfo(videoIds)
+  const { info, refresh } = useVideoInfo(videoIds)
+
+  // 枠ごとの読み直しの回数。動画 ID に添えて React の key にすることで、
+  // その枠の iframe だけを作り直す。ID を鍵にするのは、枠の位置が繰り上がっても
+  // 追従させるため。
+  const [reloads, setReloads] = useState<Record<string, number>>({})
+
+  // 見るのをやめている状態。URL にも localStorage にも入れない。
+  // セットの内容ではなく、その場の見方なので持ち越す意味がない。
+  const [playing, setPlaying] = useState(true)
 
   // セットを変えたがリンクを控えていない状態。この状態でタブを閉じると変更を失う。
   const [unsaved, setUnsaved] = useState(false)
@@ -135,6 +144,16 @@ export default function App() {
     afterSetChange()
   }
 
+  /**
+   * 枠を読み直す。セットは変わらないので URL もリンクの控えも関係ない。
+   * 配信名も取り直す。配信が終わっていればタイトルが変わっているため。
+   */
+  function reloadVideo(videoId: string) {
+    setReloads((current) => ({ ...current, [videoId]: (current[videoId] ?? 0) + 1 }))
+    refresh(videoId)
+    revealChrome()
+  }
+
   return (
     <>
       <Toolbar
@@ -150,9 +169,12 @@ export default function App() {
         onAdd={addVideoIds}
         onReplace={replaceVideoId}
         onRemove={removeVideoId}
+        onReload={reloadVideo}
         onClear={clearAll}
         unsaved={unsaved}
         onSaved={() => setUnsaved(false)}
+        playing={playing}
+        onPlayingChange={setPlaying}
       />
 
       <WorldClock onToggle={toggleChrome} />
@@ -160,6 +182,8 @@ export default function App() {
         videoIds={videoIds}
         layout={layout}
         info={info}
+        reloads={reloads}
+        playing={playing}
         showNumbers={editing}
         // 編集中は常に出す。どの枠が何かを確かめている場面なので消してはいけない。
         showCaptions={chromeVisible || editing}
