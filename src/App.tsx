@@ -32,8 +32,8 @@ function boot(): Boot {
 // StrictMode で 2 回呼ばれ、ハッシュの消去が二重に走る。
 const BOOT = boot()
 
-// 配信名を出しておく時間。9 本ぶん読めて、かつ映像を覆い続けない程度。
-const CAPTION_VISIBLE_MS = 10_000
+// 配信名を出しておく時間。9 本ぶん読み終えるには 10 秒では足りなかった。
+const CAPTION_VISIBLE_MS = 20_000
 
 export default function App() {
   const [videoIds, setVideoIds] = useState<string[]>(BOOT.initial.videoIds)

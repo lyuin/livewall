@@ -95,9 +95,6 @@ export default function Toolbar({
           <button type="button" onClick={handleCopyLink} disabled={count === 0}>
             {copyState === 'copied' ? 'Copied' : 'Copy link'}
           </button>
-          <button type="button" className="danger" onClick={handleClear} disabled={count === 0}>
-            Clear all
-          </button>
         </div>
       </div>
 
@@ -150,6 +147,15 @@ export default function Toolbar({
             <p className="note note--error">
               {invalid.length} not recognised as YouTube URLs: {invalid.join(' / ')}
             </p>
+          )}
+
+          {/* 全消去はここに隠す。常時見えるところに置くと、強い操作が近すぎる。 */}
+          {count > 0 && (
+            <div className="panel__footer">
+              <button type="button" className="danger" onClick={handleClear}>
+                Clear all
+              </button>
+            </div>
           )}
         </div>
       )}
